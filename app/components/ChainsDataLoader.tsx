@@ -10,7 +10,7 @@ import { useChainsStore } from '../store/chainsStore';
  */
 export function useLoadChainsData() {
   const { data, isError } = useChainsAndTokens();
-  const { setChains, setTokens, chains } = useChainsStore();
+  const { setChains, setTokens, setSlippagePolicies, chains } = useChainsStore();
 
   useEffect(() => {
     if (!data || isError) return;
@@ -33,5 +33,10 @@ export function useLoadChainsData() {
       setChains(allChains);
       setTokens(allTokens);
     }
-  }, [data, isError, setChains, setTokens, chains]);
+
+    // Sync slippage policies
+    if (data.slippage_policies?.length) {
+      setSlippagePolicies(data.slippage_policies);
+    }
+  }, [data, isError, setChains, setTokens, setSlippagePolicies, chains]);
 }

@@ -59,3 +59,95 @@ export interface ChainsAndTokens {
     prediction: Prediction;
   };
 }
+
+// ── SDA Quote Types ────────────────────────────────────────────────
+
+export interface SDAQuoteRequest {
+  from_chain: number;
+  to_chain: number;
+  from_token: string;
+  to_token: string;
+  from_address: string;
+  to_address: string;
+  amount: string;
+  slippage: number;
+  to_platform_id: number;
+  sponsor_gas?: boolean;
+  quote_only?: boolean;
+  use_deposit_address: boolean;
+}
+
+export interface SDAQuoteResponse {
+  request_id?: string;
+  amount_out: string;
+  approve?: {
+    token: string;
+    spender: string;
+    amount: string;
+  } | null;
+  router_type?: string;
+  points: number | string;
+  estimated_time: number;
+  fee: string;
+  min_receive: string;
+  price_impact: {
+    bridge_fee: string;
+    dst_gas_fee: string;
+    swap_fee: string;
+    before_discount_fee: string;
+    discount_percentage?: string;
+  };
+  recipient: string;
+  deposit_address?: string;
+  router: string;
+  slippage: number;
+  quote_message: string | null;
+  tx: {
+    chainId: number;
+    data: string;
+    to: string;
+    value: string;
+    gas?: string | null;
+    maxFeePerGas?: string;
+    maxPriorityFeePerGas?: string;
+    message?: string;
+    sender?: string;
+    tx?: string;
+  } | null;
+  routes?: Array<{
+    name: string;
+    logo: string;
+  }>;
+  gas_fee?: string | null;
+  quotes?: unknown;
+}
+
+// ── SDA Order Types ─────────────────────────────────────────────────
+
+export type OrderStatus = 'Open' | 'Filled' | 'Refund' | 'Failed';
+
+export interface OrderDetail {
+  data: string;
+  fill_block: number | null;
+  fill_timestamp: string | null;
+  fill_tx_hash: string | null;
+  from_amount: string;
+  from_chain: number;
+  from_token: string;
+  open_block: number;
+  open_timestamp: string;
+  open_tx_hash: string;
+  order_id: string;
+  status: OrderStatus;
+  to_address: string;
+  to_chain: number;
+  to_token: string;
+  to_amount: string;
+  amount_out?: string;
+  from_token_info: TokenInfo | null;
+  to_token_info: TokenInfo | null;
+  points: number;
+  reward_type: string;
+  reward_value: object;
+  to_platform_id: number;
+}

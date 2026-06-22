@@ -39,8 +39,14 @@ interface SdaResultProp {
 
 const SdaResult = (props: SdaResultProp) => {
   const { value } = props;
-  if (value === 'set') {
-    console.log('##########:', value)
+
+  // Map OrderStatus / legacy values to display states
+  const isInProgress = value === 'set' || value === 'Open';
+  const isSuccess = value === 'sueecss' || value === 'Filled';
+  const isFailed = value === 'fail' || value === 'Failed';
+  const isRefund = value === 'back' || value === 'Refund';
+
+  if (isInProgress) {
     return (
       <HStack {...resultBoxStyle}>
         <Box
@@ -52,50 +58,55 @@ const SdaResult = (props: SdaResultProp) => {
           <Box color={'txt-weak'}>Please wait for blockchain confirmation</Box>
         </VStack>
       </HStack>
-    )
-  } else if (value === 'sueecss') {
+    );
+  }
+
+  if (isSuccess) {
     return (
       <HStack {...resultBoxStyle}>
         <Box
           {...resultIconStyle}
           backgroundPosition={'0 -50px'}
         ></Box>
-        <VStack  {...resultContStyle}>
+        <VStack {...resultContStyle}>
           <Box {...resultTitleStyle}>Deposit successful</Box>
           <Box color={'txt-weak'}>The funds have been credited to your account</Box>
         </VStack>
       </HStack>
-    )
-  } else if (value === 'fail') {
+    );
+  }
+
+  if (isFailed) {
     return (
       <HStack {...resultBoxStyle}>
         <Box
           {...resultIconStyle}
           backgroundPosition={'0 -100px'}
         ></Box>
-        <VStack  {...resultContStyle}>
+        <VStack {...resultContStyle}>
           <Box {...resultTitleStyle}>Deposit failed</Box>
           <Box color={'txt-weak'}>Please contact support for assistance</Box>
         </VStack>
       </HStack>
-    )
-  } else if (value === 'back') {
+    );
+  }
+
+  if (isRefund) {
     return (
       <HStack {...resultBoxStyle}>
         <Box
           {...resultIconStyle}
           backgroundPosition={'0 -150px'}
         ></Box>
-        <VStack  {...resultContStyle}>
+        <VStack {...resultContStyle}>
           <Box {...resultTitleStyle}>Funds Returned</Box>
           <Box color={'txt-weak'}>Please contact support for assistance</Box>
         </VStack>
       </HStack>
-    )
+    );
   }
-  else {
-    return null
-  }
-}
+
+  return null;
+};
 
 export default SdaResult
