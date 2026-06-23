@@ -6,7 +6,7 @@
     "dev": "next dev",
     "build": "next build",
     "build:test": "env-cmd -f .env.development -f .env.build-dev next build",
-    "build:prod": "next build",
+    "build:prod": "env-cmd -f .env.build-prod next build",
     "start": "next start",
     "lint": "eslint",
     "format": "prettier --write . && eslint --fix ."
