@@ -37,10 +37,102 @@ import { calculateAutoSlippage } from '../api/slippage';
 import { isSolanaChain } from '../consts/solana';
 import { isValidEVMAddress, isValidSolanaAddress } from '../utils/address';
 import type { SDAQuoteResponse, TokenInfo } from '../api/types';
+import { TiArrowSortedDown } from "react-icons/ti";
 
 // ── Constants ──────────────────────────────────────────────────────────
 const ETH_CHAIN_ID = 1;
 const NULL_ADDRESS = '0x0000000000000000000000000000000000000000';
+
+// Allowed chains and tokens for the two-step SDA flow
+const ALLOWED_CHAIN_IDS = new Set<number>([
+  1, 56, 8453, 42161, 999, 10, 143, 137, 1151111081099710, 4217, 988, 9745, 43114, 2818,
+]);
+
+const ALLOWED_TOKEN_ADDRESSES: Map<number, Set<string>> = new Map([
+  [1, new Set([
+    '0xa0b86991c6218b36c1d19d4a2e9eb0ce3606eb48', '0xdac17f958d2ee523a2206206994597c13d831ec7',
+    '0x0000000000000000000000000000000000000000', '0xc02aaa39b223fe8d0a0e5c4f27ead9083c756cc2',
+    '0x8d0d000ee44948fc98c9b98a4fa4921476f08b0d', '0xcbb7c0000ab88b473b1f5afd9ef808440eed33bf',
+    '0x4c9edd5852cd905f086c759e8383e09bff1e68b3', '0x8292bb45bf1ee4d140127049757c2e0ff06317ed',
+    '0x6c3ea9036406852006290770bedfcaba0e23a0e8', '0xe343167631d89b6ffc58b88d6b7fb0228795491d',
+    '0x45804880de22913dafe09f4980848ece6ecbaf78', '0x68749665ff8d2d112fa859aa293f07a622782f38',
+    '0xdc035d45d973e3ec169d2276ddab16f1e407384f', '0x6b175474e89094c44da98b954eedeac495271d0f',
+    '0x2260fac5e5542a773aa44fbcfedf7c193bc2c599',
+  ])],
+  [56, new Set([
+    '0x8ac76a51cc950d9822d68b83fe1ad97b32cd580d', '0x0000000000000000000000000000000000000000',
+    '0x7130d2a12b9bcbfae4f2634d864a1ee1ce3ead9c', '0xe9e7cea3dedca5984780bafc599bd69add087d56',
+    '0x2170ed0880ac9a755fd29b2688956bd959f933f8', '0xce24439f2d9c6a2289f741120fe202248b666666',
+    '0x8d0d000ee44948fc98c9b98a4fa4921476f08b0d', '0x55d398326f99059ff775485246999027b3197955',
+    '0xbb4cdb9cbd36b01bd1cbaebf2de08d9173bc095c',
+  ])],
+  [8453, new Set([
+    '0x833589fcd6edb6e08f4c7c32d4f71b54bda02913', '0xcbb7c0000ab88b473b1f5afd9ef808440eed33bf',
+    '0x50c5725949a6f0c72e6c4a641f24049a917db0cb', '0x0000000000000000000000000000000000000000',
+    '0x2ae3f1ec7f1f5012cfeab0185bfc7aa3cf0dec22', '0xfde4c96c8593536e31f229ea8f37b2ada2699bb2',
+    '0x4200000000000000000000000000000000000006',
+  ])],
+  [42161, new Set([
+    '0xaf88d065e77c8cc2239327c5edb3a432268e5831', '0xff970a61a04b1ca14834a43f5de4533ebddb5cc8',
+    '0x912ce59144191c1204e64559fe8253a0e49e6548', '0xda10009cbd5d07dd0cecc66161fc93d7c9000da1',
+    '0x0000000000000000000000000000000000000000', '0x2f2a2543b76a4166549f7aab2e75bef0aefc5b0f',
+    '0xfd086bc7cd5c481dcc9c85ebe478a1c0b69fcbb9', '0x82af49447d8a07e3bd95bd0d56f35241523fbab1',
+  ])],
+  [999, new Set([
+    '0xb88339cb7199b77e23db6e890353e22632ba630f', '0x9fdbda0a5e284c32744d2f17ee5c74b284993463',
+    '0x0000000000000000000000000000000000000000', '0x5d3a1ff2b6bab83b63cd9ad0787074081a52ef34',
+    '0xb8ce59fc3717ada4c02eadf9682a9e934f625ebb', '0xbe6727b535545c67d5caa73dea54865b92cf7907',
+  ])],
+  [10, new Set([
+    '0x0b2c639c533813f4aa9d7837caf62653d097ff85', '0x7f5c764cbc14f9669b88837ca1490cca17c31607',
+    '0xda10009cbd5d07dd0cecc66161fc93d7c9000da1', '0x0000000000000000000000000000000000000000',
+    '0x01bff41798a0bcf287b996046ca68b395dbc1071', '0x94b008aa00579c1307b0ef2c499ad98a8ce58e58',
+    '0x4200000000000000000000000000000000000006',
+  ])],
+  [143, new Set([
+    '0x754704bc059f8c67012fed69bc8a327a5aafb603', '0x0000000000000000000000000000000000000000',
+  ])],
+  [137, new Set([
+    '0x3c499c542cef5e3811e1192ce70d8cc03d5c3359', '0x2791bca1f2de4661ed88a30c99a7a9449aa84174',
+    '0x0000000000000000000000000000000000000000', '0x7ceb23fd6bc0add59e62ac25578270cff1b9f619',
+    '0x8f3cf7ad23cd3cadbd9735aff958023239c6a063', '0xc2132d05d31c914a87c6611c10748aeb04b58e8f',
+  ])],
+  [1151111081099710, new Set([
+    'epjfwdd5aufqssqem2qn1xzybapc8g4weggkzwytdt1v', '11111111111111111111111111111111',
+    'dekqhypn7gmrj5cartqfawefqzbz33hyf6s5icwjeont', 'es9vmfrzacermjfrf4h2fyd4kconky11mcce8benwnyb',
+    'usd1ttgy1n17neehlmeloaybftrbuserhqyiqzvemub', 'usdswr9apdhk5bvjkmjzff41ffux8bsxdckr81vtwca',
+    'cbbtcf3aa214zxhibazqwf4122fbybrandfqgw4imij',
+  ])],
+  [4217, new Set([
+    '0x20c0000000000000000000000000000000000000', '0x20c000000000000000000000b9537d11c60e8b50',
+    '0x20c00000000000000000000014f22ca97301eb73',
+  ])],
+  [988, new Set([
+    '0x0000000000000000000000000000000000000000', '0x779ded0c9e1022225f8e0630b35a9b54be713736',
+  ])],
+  [9745, new Set([
+    '0x0000000000000000000000000000000000000000', '0x6100e367285b01f48d07953803a2d8dca5d19873',
+    '0xb8ce59fc3717ada4c02eadf9682a9e934f625ebb', '0x5d3a1ff2b6bab83b63cd9ad0787074081a52ef34',
+  ])],
+  [43114, new Set([
+    '0x0000000000000000000000000000000000000000', '0x9702230a8ea53601f5cd2dc00fdbc13d4df4a8c7',
+    '0xb97ef9ef8734c71904d8002f8b6bc66dd9c48a6e', '0xb31f66aa3c1e785363f0875a1b74e27b85fd66c7',
+    '0x49d5c2bdffac6ce2bfdb6640f4f80f226bc10bab', '0x0555e30da8f98308edb960aa94c0db47230d2b9c',
+  ])],
+  [2818, new Set([
+    '0x0000000000000000000000000000000000000000', '0x5300000000000000000000000000000000000011',
+    '0xe34c91815d7fc18a9e2148bcd4241d0a5848b693', '0xc7d67a9cbb121b3b0b9c053dd9f469523243379a',
+    '0xcfb1186f4e93d60e60a8bdd997427d1f33bc372b',
+  ])],
+]);
+
+/** Check if a token is allowed based on its chain_id and address */
+function isTokenAllowed(chainId: number, address: string | undefined): boolean {
+  if (!address) return false;
+  const allowed = ALLOWED_TOKEN_ADDRESSES.get(chainId);
+  if (!allowed) return false;
+  return allowed.has(address.toLowerCase());
+}
 
 // ── Helpers ────────────────────────────────────────────────────────────
 function formatPriceImpact(priceImpact: SDAQuoteResponse['price_impact']): string {
@@ -69,6 +161,7 @@ const SDAPage = () => {
   const [receiveAddress, setReceiveAddress] = useState('');
   const [qrCodeUrl, setQrCodeUrl] = useState('');
   const [copied, setCopied] = useState(false);
+  const [isExpanded, setIsExpanded] = useState(false);
 
   useLoadChainsData();
   const { chains, tokens: apiTokens, slippagePolicies } = useChainsStore();
@@ -79,11 +172,11 @@ const SDAPage = () => {
     startPolling,
     stopPolling,
     reset: resetOrder,
-  } = usePollSDAOrder({ interval: 5000, maxAttempts: 100 });
+  } = usePollSDAOrder({ interval: 2000, maxAttempts: 100 });
 
-  // ── Filtered chains (exclude testnets) ────────────────────────────
+  // ── Filtered chains (exclude testnets + only allowed chains) ─────
   const filteredChains: ChainInfo[] = useMemo(
-    () => (chains || []).filter((c) => !c.is_testnet),
+    () => (chains || []).filter((c) => !c.is_testnet && ALLOWED_CHAIN_IDS.has(c.chain_id)),
     [chains],
   );
 
@@ -121,15 +214,15 @@ const SDAPage = () => {
   const [showDemoResult, setShowDemoResult] = useState(false);
   const [showOrderResult, setShowOrderResult] = useState(false);
 
-  // When a new quote response arrives, show the result for 5 seconds
+  // When order data first returns, show the result for 5 seconds
   useEffect(() => {
-    if (quoteResponse) {
+    if (orderData) {
       // eslint-disable-next-line react-hooks/set-state-in-effect
       setShowDemoResult(true);
       const timer = setTimeout(() => setShowDemoResult(false), 5000);
       return () => clearTimeout(timer);
     }
-  }, [quoteResponse]);
+  }, [orderData]);
 
   // When order status changes (success/failed/refund), show the result for 5 seconds
   useEffect(() => {
@@ -147,12 +240,12 @@ const SDAPage = () => {
   // Default to Ethereum for "From" (already set in useState)
   const effectiveFromChainId = fromChainId ?? ETH_CHAIN_ID;
 
-  // ── Tokens for selected chain ────────────────────────────────────
+  // ── Tokens for selected chain (filtered by allowlist) ───────────
   const enrichedTokens = useMemo(() => {
     if (!effectiveChainId || !apiTokens) return [];
     const seen = new Set<string>();
     return apiTokens
-      .filter((t) => t.chain_id === effectiveChainId)
+      .filter((t) => t.chain_id === effectiveChainId && isTokenAllowed(effectiveChainId, t.address))
       .filter((t) => {
         const key = t.address?.toLowerCase();
         if (!key || seen.has(key)) return false;
@@ -190,7 +283,7 @@ const SDAPage = () => {
       : null;
 
     return apiTokens
-      .filter((t) => t.chain_id === effectiveFromChainId)
+      .filter((t) => t.chain_id === effectiveFromChainId && isTokenAllowed(effectiveFromChainId, t.address))
       .filter((t) => {
         const key = t.address?.toLowerCase();
         if (!key || seen.has(key)) return false;
@@ -532,6 +625,17 @@ const SDAPage = () => {
     setIsPollingOrder(true);
     startPolling(requestId);
   }, [quoteResponse?.request_id, startPolling, stopPolling, resetOrder, setIsPollingOrder]);
+
+  // Stop order polling when user switches back to step 1
+  const prevActiveIndexRef = useRef(activeIndex);
+  useEffect(() => {
+    if (prevActiveIndexRef.current === 1 && activeIndex === 0) {
+      stopPolling();
+      resetOrder();
+      setIsPollingOrder(false);
+    }
+    prevActiveIndexRef.current = activeIndex;
+  }, [activeIndex, stopPolling, resetOrder, setIsPollingOrder]);
 
   // ── Loading ──────────────────────────────────────────────────────
   const isLoading = !chains || !chainCollection;
@@ -929,12 +1033,45 @@ const SDAPage = () => {
               backgroundColor={'#fff'}
               borderRadius={'5px'}
               padding={'10px'}
+              position={'relative'}
             >
               {qrCodeUrl ? (
                 <Image src={qrCodeUrl} alt="QR Code" w={'140px'} h={'140px'} />
               ) : (
                 <Box w={'140px'} h={'140px'} />
               )}
+              <Box
+                position={'absolute'}
+                w={'36px'}
+                h={'36px'}
+                borderRadius={'36px'}
+                backgroundColor={'#fff'}
+                left={'50%'}
+                top={'50%'}
+                transform={'translate3d(-50%,-50%,0)'}
+              >
+                <Image
+                  src={fromSelectedChain?.chain_icon || '/images/default-token-icon.png'}
+                  alt="From chain"
+                  w={'24px'}
+                  h={'24px'}
+                  position={'absolute'}
+                  left={'50%'}
+                  top={'50%'}
+                  transform={'translate3d(-50%,-50%,0)'}
+                  borderRadius={'full'}
+                />
+                <Image
+                  src={fromSelectedToken?.logo || '/images/default-token-icon.png'}
+                  alt="From token"
+                  w={'10px'}
+                  h={'10px'}
+                  position={'absolute'}
+                  bottom={'5px'}
+                  right={'5px'}
+                  borderRadius={'full'}
+                />
+              </Box>
             </Box>
             <Box color={'txt-normal'} padding={'4px 0'}>
               {displayAddress || 'Waiting for deposit address...'}
@@ -951,7 +1088,7 @@ const SDAPage = () => {
               <PiCopy style={{ width: '14px', height: '14px' }} />
               {copied ? 'Copied!' : 'Copy Address'}
             </Button>
-            {metaMaskDeepLink && (
+            {/* {metaMaskDeepLink && (
               <Button
                 marginBottom={'10px'}
                 padding={'0 20px'}
@@ -964,7 +1101,7 @@ const SDAPage = () => {
               >
                 Open in MetaMask
               </Button>
-            )}
+            )} */}
             <Box
               w={'100%'}
               color={'txt-weak'}
@@ -987,56 +1124,81 @@ const SDAPage = () => {
                   </Box>
                   <ToggleTip content="The total fee impact including bridge fee, gas fee, and swap fee.">
                     <Button variant="ghost" h="22px" minW={0}>
-                      <LuInfo />
+                      <LuInfo style={{ width: '14px', height: '14px' }} />
                     </Button>
                   </ToggleTip>
-                </HStack>
-              </HStack>
-              <HStack justifyContent={'space-between'} gap={0} marginBottom={'6px'}>
-                <HStack gap={0}>
-                  <Box color={'txt-light'} marginRight={'4px'}>
-                    <AiOutlinePercentage />
-                  </Box>
-                  Slippage
-                </HStack>
-                <HStack gap={0}>
-                  <Box marginRight={'5px'}>
-                    {quoteLoading ? 'Loading...' : txInfo?.slippage ?? '-'}
-                  </Box>
-                  <ToggleTip content="Slippage tolerance for this quote.">
-                    <Button variant="ghost" h="22px" minW={0}>
-                      <LuInfo />
-                    </Button>
-                  </ToggleTip>
-                </HStack>
-              </HStack>
-              <HStack justifyContent={'space-between'} gap={0} marginBottom={'10px'}>
-                <HStack gap={0}>
-                  <Box color={'txt-light'} marginRight={'4px'}>
-                    <IoMdTime />
-                  </Box>
-                  Est. Time
-                </HStack>
-                <HStack>
-                  <Box h="22px">
-                    {quoteLoading ? 'Loading...' : txInfo?.estimatedTime ?? '-'}
+                  <Box
+                    cursor="pointer"
+                    w={'14px'}
+                    h={'14px'}
+                    onClick={() => setIsExpanded(!isExpanded)}
+                    transition="transform 0.2s"
+                    transform={isExpanded ? 'rotate(180deg)' : 'rotate(0deg)'}
+                    marginLeft={'6px'}
+                  >
+                    <TiArrowSortedDown style={{ width: '14px', height: '14px' }} />
                   </Box>
                 </HStack>
               </HStack>
-              <HStack
-                gap={0}
-                padding={'8px 10px'}
-                backgroundColor={'rgba(252,202,0,.13)'}
-                borderRadius={'5px'}
-              >
-                <RiErrorWarningFill
-                  style={{ width: '20px', height: '20px', color: 'FCCA00', flexShrink: 0 }}
-                />
-                <Box lineHeight={'1.2'} paddingLeft={'10px'}>
-                  Sending the wrong token or from a different network may result in a loss of
-                  funds.
-                </Box>
-              </HStack>
+              {isExpanded && (
+                <>
+                  <HStack justifyContent={'space-between'} gap={0} marginBottom={'6px'}>
+                    <HStack gap={0}>
+                      <Box color={'txt-light'} marginRight={'4px'}>
+                        <AiOutlinePercentage />
+                      </Box>
+                      Slippage
+                    </HStack>
+                    <HStack gap={0}>
+                      <Box marginRight={'5px'}>
+                        {quoteLoading ? 'Loading...' : txInfo?.slippage ?? '-'}
+                      </Box>
+                      <ToggleTip content="Slippage tolerance for this quote.">
+                        <Button variant="ghost" h="22px" minW={0}>
+                          <LuInfo style={{ width: '14px', height: '14px' }} />
+                        </Button>
+                      </ToggleTip>
+                      <Box
+                        w={'14px'}
+                        h={'14px'}
+                        marginLeft={'6px'}
+                      ></Box>
+                    </HStack>
+                  </HStack>
+                  <HStack justifyContent={'space-between'} gap={0} marginBottom={'10px'}>
+                    <HStack gap={0}>
+                      <Box color={'txt-light'} marginRight={'4px'}>
+                        <IoMdTime />
+                      </Box>
+                      Est. Time
+                    </HStack>
+                    <HStack>
+                      <Box h="22px">
+                        {quoteLoading ? 'Loading...' : txInfo?.estimatedTime ?? '-'}
+                      </Box>
+                      <Box
+                        w={'14px'}
+                        h={'14px'}
+                        marginLeft={'6px'}
+                      ></Box>
+                    </HStack>
+                  </HStack>
+                  <HStack
+                    gap={0}
+                    padding={'8px 10px'}
+                    backgroundColor={'rgba(252,202,0,.13)'}
+                    borderRadius={'5px'}
+                  >
+                    <RiErrorWarningFill
+                      style={{ width: '20px', height: '20px', color: 'FCCA00', flexShrink: 0 }}
+                    />
+                    <Box lineHeight={'1.2'} paddingLeft={'10px'}>
+                      Sending the wrong token or from a different network may result in a loss of
+                      funds.
+                    </Box>
+                  </HStack>
+                </>
+              )}
             </Box>
           </VStack>
           {showOrderResult && orderStatus ? (
@@ -1107,8 +1269,8 @@ const SDAPage = () => {
                 padding={'0 5px'}
                 borderRadius={'20px'}
                 background={activeIndex === index ? '#0F40F5' : 'transparent'}
-              // cursor="pointer"
-              // onClick={() => setActiveIndex(index)}
+                cursor={index === 0 ? "pointer" : 'default'}
+                onClick={() => { if (index === 0) { setActiveIndex(index) } }}
               >
                 <Text
                   w={'14px'}
