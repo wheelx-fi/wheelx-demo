@@ -455,31 +455,31 @@ const SDAPage = () => {
 
   // MetaMask deep link: opens Send confirmation screen directly in MetaMask mobile app.
   // Format: https://link.metamask.io/send/{address}@{chainId}
-  const metaMaskDeepLink = useMemo(() => {
-    if (!displayAddress || chainIsSol) return '';
-    const depositChainId = effectiveChainId ?? effectiveFromChainId;
-    return `https://link.metamask.io/send/${displayAddress}@${depositChainId}`;
-  }, [displayAddress, chainIsSol, effectiveChainId, effectiveFromChainId]);
+  // const metaMaskDeepLink = useMemo(() => {
+  //   if (!displayAddress || chainIsSol) return '';
+  //   const depositChainId = effectiveChainId ?? effectiveFromChainId;
+  //   return `https://link.metamask.io/send/${displayAddress}@${depositChainId}`;
+  // }, [displayAddress, chainIsSol, effectiveChainId, effectiveFromChainId]);
 
   // MetaMask deep link only works on mobile (opens MetaMask app).
   // On desktop, it redirects to chrome-extension:// which 404s on /send/ route.
-  const handleOpenMetaMask = useCallback(async () => {
-    if (!metaMaskDeepLink || !displayAddress) return;
-    const isMobile = /Android|iPhone|iPad|iPod/i.test(navigator.userAgent);
-    if (isMobile) {
-      // Navigate current page to trigger MetaMask app deep link
-      window.location.href = metaMaskDeepLink;
-    } else {
-      // Desktop fallback: copy address to clipboard
-      try {
-        await navigator.clipboard.writeText(displayAddress);
-        setCopied(true);
-        setTimeout(() => setCopied(false), 2000);
-      } catch {
-        // clipboard API may fail in insecure contexts
-      }
-    }
-  }, [metaMaskDeepLink, displayAddress]);
+  // const handleOpenMetaMask = useCallback(async () => {
+  //   if (!metaMaskDeepLink || !displayAddress) return;
+  //   const isMobile = /Android|iPhone|iPad|iPod/i.test(navigator.userAgent);
+  //   if (isMobile) {
+  //     // Navigate current page to trigger MetaMask app deep link
+  //     window.location.href = metaMaskDeepLink;
+  //   } else {
+  //     // Desktop fallback: copy address to clipboard
+  //     try {
+  //       await navigator.clipboard.writeText(displayAddress);
+  //       setCopied(true);
+  //       setTimeout(() => setCopied(false), 2000);
+  //     } catch {
+  //       // clipboard API may fail in insecure contexts
+  //     }
+  //   }
+  // }, [metaMaskDeepLink, displayAddress]);
 
   useEffect(() => {
     let cancelled = false;
