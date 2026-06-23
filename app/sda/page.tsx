@@ -118,6 +118,29 @@ const SDAPage = () => {
   const [quoteLoading, setQuoteLoading] = useState(false);
   const [quoteError, setQuoteError] = useState<string | null>(null);
   const pendingQuoteRef = useRef(false);
+  const [showDemoResult, setShowDemoResult] = useState(false);
+  const [showOrderResult, setShowOrderResult] = useState(false);
+
+  // When a new quote response arrives, show the result for 5 seconds
+  useEffect(() => {
+    if (quoteResponse) {
+      // eslint-disable-next-line react-hooks/set-state-in-effect
+      setShowDemoResult(true);
+      const timer = setTimeout(() => setShowDemoResult(false), 5000);
+      return () => clearTimeout(timer);
+    }
+  }, [quoteResponse]);
+
+  // When order status changes (success/failed/refund), show the result for 5 seconds
+  useEffect(() => {
+    const status = orderData?.status;
+    if (status) {
+      // eslint-disable-next-line react-hooks/set-state-in-effect
+      setShowOrderResult(true);
+      const timer = setTimeout(() => setShowOrderResult(false), 5000);
+      return () => clearTimeout(timer);
+    }
+  }, [orderData?.status]);
 
   // Default to first chain for "Receive"
   const effectiveChainId = selectedChainId ?? filteredChains[0]?.chain_id ?? null;
@@ -1016,11 +1039,11 @@ const SDAPage = () => {
               </HStack>
             </Box>
           </VStack>
-          {orderStatus ? (
+          {showOrderResult && orderStatus ? (
             <SdaResult value={orderStatus} />
-          ) : (
+          ) : showDemoResult ? (
             <SdaResult value={'set'} />
-          )}
+          ) : null}
         </Box>
       );
     }
