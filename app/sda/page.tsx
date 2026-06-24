@@ -98,7 +98,9 @@ const ALLOWED_TOKEN_ADDRESSES: Map<number, Set<string>> = new Map([
     '0x8f3cf7ad23cd3cadbd9735aff958023239c6a063', '0xc2132d05d31c914a87c6611c10748aeb04b58e8f',
   ])],
   [1151111081099710, new Set([
-    'epjfwdd5aufqssqem2qn1xzybapc8g4weggkzwytdt1v', '11111111111111111111111111111111',
+    'epjfwdd5aufqssqem2qn1xzybapc8g4weggkzwytdt1v',
+    '11111111111111111111111111111111',
+    '3o2GCwpoUTr6CezPdvMYHmxY9wcfVr5TU1oTb1uLJGVm',
     'dekqhypn7gmrj5cartqfawefqzbz33hyf6s5icwjeont', 'es9vmfrzacermjfrf4h2fyd4kconky11mcce8benwnyb',
     'usd1ttgy1n17neehlmeloaybftrbuserhqyiqzvemub', 'usdswr9apdhk5bvjkmjzff41ffux8bsxdckr81vtwca',
     'cbbtcf3aa214zxhibazqwf4122fbybrandfqgw4imij',
