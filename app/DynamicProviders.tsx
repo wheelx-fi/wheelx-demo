@@ -1,5 +1,7 @@
 'use client';
 
+import { ChakraProvider } from '@chakra-ui/react';
+import { system } from '@/app/ui/theme';
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
 import { DynamicContextProvider } from '@dynamic-labs/sdk-react-core';
 import type { EvmNetwork } from '@dynamic-labs/sdk-react-core';
@@ -60,12 +62,14 @@ export function DynamicProviders({ children }: PropsWithChildren) {
   );
 
   return (
-    <QueryClientProvider client={queryClient}>
-      <DynamicContextProvider settings={dynamicSettings}>
-        <WagmiProvider config={config}>
-          <DynamicWagmiConnector>{children}</DynamicWagmiConnector>
-        </WagmiProvider>
-      </DynamicContextProvider>
-    </QueryClientProvider>
+    <ChakraProvider value={system}>
+      <QueryClientProvider client={queryClient}>
+        <DynamicContextProvider settings={dynamicSettings}>
+          <WagmiProvider config={config}>
+            <DynamicWagmiConnector>{children}</DynamicWagmiConnector>
+          </WagmiProvider>
+        </DynamicContextProvider>
+      </QueryClientProvider>
+    </ChakraProvider>
   );
 }

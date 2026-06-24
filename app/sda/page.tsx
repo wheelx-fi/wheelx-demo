@@ -49,7 +49,7 @@ const ALLOWED_CHAIN_IDS = new Set<number>([
 ]);
 
 const ALLOWED_TOKEN_ADDRESSES: Map<number, Set<string>> = new Map([
-  [1, new Set([
+  [1, ciSet(
     '0xa0b86991c6218b36c1d19d4a2e9eb0ce3606eb48', '0xdac17f958d2ee523a2206206994597c13d831ec7',
     '0x0000000000000000000000000000000000000000', '0xc02aaa39b223fe8d0a0e5c4f27ead9083c756cc2',
     '0x8d0d000ee44948fc98c9b98a4fa4921476f08b0d', '0xcbb7c0000ab88b473b1f5afd9ef808440eed33bf',
@@ -58,82 +58,87 @@ const ALLOWED_TOKEN_ADDRESSES: Map<number, Set<string>> = new Map([
     '0x45804880de22913dafe09f4980848ece6ecbaf78', '0x68749665ff8d2d112fa859aa293f07a622782f38',
     '0xdc035d45d973e3ec169d2276ddab16f1e407384f', '0x6b175474e89094c44da98b954eedeac495271d0f',
     '0x2260fac5e5542a773aa44fbcfedf7c193bc2c599',
-  ])],
-  [56, new Set([
+  )],
+  [56, ciSet(
     '0x8ac76a51cc950d9822d68b83fe1ad97b32cd580d', '0x0000000000000000000000000000000000000000',
     '0x7130d2a12b9bcbfae4f2634d864a1ee1ce3ead9c', '0xe9e7cea3dedca5984780bafc599bd69add087d56',
     '0x2170ed0880ac9a755fd29b2688956bd959f933f8', '0xce24439f2d9c6a2289f741120fe202248b666666',
     '0x8d0d000ee44948fc98c9b98a4fa4921476f08b0d', '0x55d398326f99059ff775485246999027b3197955',
     '0xbb4cdb9cbd36b01bd1cbaebf2de08d9173bc095c',
-  ])],
-  [8453, new Set([
+  )],
+  [8453, ciSet(
     '0x833589fcd6edb6e08f4c7c32d4f71b54bda02913', '0xcbb7c0000ab88b473b1f5afd9ef808440eed33bf',
     '0x50c5725949a6f0c72e6c4a641f24049a917db0cb', '0x0000000000000000000000000000000000000000',
     '0x2ae3f1ec7f1f5012cfeab0185bfc7aa3cf0dec22', '0xfde4c96c8593536e31f229ea8f37b2ada2699bb2',
     '0x4200000000000000000000000000000000000006',
-  ])],
-  [42161, new Set([
+  )],
+  [42161, ciSet(
     '0xaf88d065e77c8cc2239327c5edb3a432268e5831', '0xff970a61a04b1ca14834a43f5de4533ebddb5cc8',
     '0x912ce59144191c1204e64559fe8253a0e49e6548', '0xda10009cbd5d07dd0cecc66161fc93d7c9000da1',
     '0x0000000000000000000000000000000000000000', '0x2f2a2543b76a4166549f7aab2e75bef0aefc5b0f',
     '0xfd086bc7cd5c481dcc9c85ebe478a1c0b69fcbb9', '0x82af49447d8a07e3bd95bd0d56f35241523fbab1',
-  ])],
-  [999, new Set([
+  )],
+  [999, ciSet(
     '0xb88339cb7199b77e23db6e890353e22632ba630f', '0x9fdbda0a5e284c32744d2f17ee5c74b284993463',
     '0x0000000000000000000000000000000000000000', '0x5d3a1ff2b6bab83b63cd9ad0787074081a52ef34',
     '0xb8ce59fc3717ada4c02eadf9682a9e934f625ebb', '0xbe6727b535545c67d5caa73dea54865b92cf7907',
-  ])],
-  [10, new Set([
+  )],
+  [10, ciSet(
     '0x0b2c639c533813f4aa9d7837caf62653d097ff85', '0x7f5c764cbc14f9669b88837ca1490cca17c31607',
     '0xda10009cbd5d07dd0cecc66161fc93d7c9000da1', '0x0000000000000000000000000000000000000000',
     '0x01bff41798a0bcf287b996046ca68b395dbc1071', '0x94b008aa00579c1307b0ef2c499ad98a8ce58e58',
     '0x4200000000000000000000000000000000000006',
-  ])],
-  [143, new Set([
+  )],
+  [143, ciSet(
     '0x754704bc059f8c67012fed69bc8a327a5aafb603', '0x0000000000000000000000000000000000000000',
-  ])],
-  [137, new Set([
+  )],
+  [137, ciSet(
     '0x3c499c542cef5e3811e1192ce70d8cc03d5c3359', '0x2791bca1f2de4661ed88a30c99a7a9449aa84174',
     '0x0000000000000000000000000000000000000000', '0x7ceb23fd6bc0add59e62ac25578270cff1b9f619',
     '0x8f3cf7ad23cd3cadbd9735aff958023239c6a063', '0xc2132d05d31c914a87c6611c10748aeb04b58e8f',
-  ])],
-  [1151111081099710, new Set([
-    'epjfwdd5aufqssqem2qn1xzybapc8g4weggkzwytdt1v',
+  )],
+  [1151111081099710, ciSet(
+    'EPjFWdd5AufqSSqeM2qN1xzybapC8G4wEGGkZwyTDt1v',
     '11111111111111111111111111111111',
     '3o2GCwpoUTr6CezPdvMYHmxY9wcfVr5TU1oTb1uLJGVm',
-    'dekqhypn7gmrj5cartqfawefqzbz33hyf6s5icwjeont', 'es9vmfrzacermjfrf4h2fyd4kconky11mcce8benwnyb',
-    'usd1ttgy1n17neehlmeloaybftrbuserhqyiqzvemub', 'usdswr9apdhk5bvjkmjzff41ffux8bsxdckr81vtwca',
-    'cbbtcf3aa214zxhibazqwf4122fbybrandfqgw4imij',
-  ])],
-  [4217, new Set([
+    'DEkqHyPN7GMRJ5cArtQFAWefqbZb33Hyf6s5iCwjEonT', 'Es9vMFrzaCERmJfrF4H2FYD4KCoNkY11McCe8BenwNYB',
+    'USD1ttGY1N17NEEHLmELoaybftRBUSErhqYiQzvEmuB', 'USDSwr9ApdHk5bvJKMjzff41FfuX8bSxdKcR81vTwcA',
+    'cbbtcf3aa214zXHbiAZQwf4122FBYbraNdFqgw4iMij',
+  )],
+  [4217, ciSet(
     '0x20c0000000000000000000000000000000000000', '0x20c000000000000000000000b9537d11c60e8b50',
     '0x20c00000000000000000000014f22ca97301eb73',
-  ])],
-  [988, new Set([
+  )],
+  [988, ciSet(
     '0x0000000000000000000000000000000000000000', '0x779ded0c9e1022225f8e0630b35a9b54be713736',
-  ])],
-  [9745, new Set([
+  )],
+  [9745, ciSet(
     '0x0000000000000000000000000000000000000000', '0x6100e367285b01f48d07953803a2d8dca5d19873',
     '0xb8ce59fc3717ada4c02eadf9682a9e934f625ebb', '0x5d3a1ff2b6bab83b63cd9ad0787074081a52ef34',
-  ])],
-  [43114, new Set([
+  )],
+  [43114, ciSet(
     '0x0000000000000000000000000000000000000000', '0x9702230a8ea53601f5cd2dc00fdbc13d4df4a8c7',
     '0xb97ef9ef8734c71904d8002f8b6bc66dd9c48a6e', '0xb31f66aa3c1e785363f0875a1b74e27b85fd66c7',
     '0x49d5c2bdffac6ce2bfdb6640f4f80f226bc10bab', '0x0555e30da8f98308edb960aa94c0db47230d2b9c',
-  ])],
-  [2818, new Set([
+  )],
+  [2818, ciSet(
     '0x0000000000000000000000000000000000000000', '0x5300000000000000000000000000000000000011',
     '0xe34c91815d7fc18a9e2148bcd4241d0a5848b693', '0xc7d67a9cbb121b3b0b9c053dd9f469523243379a',
     '0xcfb1186f4e93d60e60a8bdd997427d1f33bc372b',
-  ])],
+  )],
 ]);
 
-/** Check if a token is allowed based on its chain_id and address */
+/** Check if a token is allowed based on its chain_id and address (case-insensitive) */
 function isTokenAllowed(chainId: number, address: string | undefined): boolean {
   if (!address) return false;
   const allowed = ALLOWED_TOKEN_ADDRESSES.get(chainId);
   if (!allowed) return false;
   return allowed.has(address.toLowerCase());
+}
+
+/** Helper: create a case-insensitive Set from string array */
+function ciSet(...addrs: string[]): Set<string> {
+  return new Set(addrs.map((s) => s.toLowerCase()));
 }
 
 // ── Helpers ────────────────────────────────────────────────────────────
