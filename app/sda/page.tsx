@@ -582,7 +582,7 @@ const SDAPage = () => {
           to_token: toTokenAddr,
           from_address: NULL_ADDRESS,
           to_address: receiveAddress,
-          amount: (100 * 10 ** 6).toString(),
+          amount: '0',
           slippage: autoSlippage,
           to_platform_id: toPlatformId,
           use_deposit_address: true,
@@ -1109,6 +1109,22 @@ const SDAPage = () => {
                 Open in MetaMask
               </Button>
             )} */}
+
+            <HStack
+              gap={0}
+              padding={'8px 10px'}
+              backgroundColor={'rgba(252,202,0,.13)'}
+              borderRadius={'5px'}
+              marginBottom={'5px'}
+            >
+              <RiErrorWarningFill
+                style={{ width: '20px', height: '20px', color: 'FCCA00', flexShrink: 0 }}
+              />
+              <Box lineHeight={'1.2'} paddingLeft={'10px'}>
+                Sending the wrong token or from a different network may result in a loss of
+                funds.
+              </Box>
+            </HStack>
             <Box
               w={'100%'}
               color={'txt-weak'}
@@ -1190,20 +1206,7 @@ const SDAPage = () => {
                       ></Box>
                     </HStack>
                   </HStack>
-                  <HStack
-                    gap={0}
-                    padding={'8px 10px'}
-                    backgroundColor={'rgba(252,202,0,.13)'}
-                    borderRadius={'5px'}
-                  >
-                    <RiErrorWarningFill
-                      style={{ width: '20px', height: '20px', color: 'FCCA00', flexShrink: 0 }}
-                    />
-                    <Box lineHeight={'1.2'} paddingLeft={'10px'}>
-                      Sending the wrong token or from a different network may result in a loss of
-                      funds.
-                    </Box>
-                  </HStack>
+
                 </>
               )}
             </Box>
