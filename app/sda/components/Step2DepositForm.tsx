@@ -19,6 +19,8 @@ import { ChainSelectDropdown } from './ChainSelectDropdown';
 import { TokenSelectDropdown } from './TokenSelectDropdown';
 import { TransactionInfoBox } from './TransactionInfoBox';
 import type { EnrichedToken } from './Step1ReceiveForm';
+import { ToggleTip } from '@/components/ui/ToggleTip';
+import { LuInfo } from 'react-icons/lu';
 
 interface Step2DepositFormProps {
   isLoading: boolean;
@@ -129,7 +131,17 @@ export function Step2DepositForm({
           </Box>
         )}
 
-        <Box>Scan the QR code or copy the address to transfer</Box>
+        <HStack>
+          <Box>Scan the QR code or copy the address to transfer</Box>
+          <ToggleTip
+            content="This is a randomly generated, one-time-use deposit address. Once funds are sent using the selected network and token, WheelX will automatically identify and credit the deposit to your account or receiving address."
+            contentProps={{ maxWidth: '280px' }}
+          >
+            <Button variant="ghost" minW={0} h={'14px'}>
+              <LuInfo style={{ width: '14px', height: '14px' }} />
+            </Button>
+          </ToggleTip>
+        </HStack>
 
         {/* QR Code Card */}
         <Box
@@ -209,7 +221,7 @@ export function Step2DepositForm({
             style={{ width: '20px', height: '20px', color: 'FCCA00', flexShrink: 0 }}
           />
           <Box lineHeight={'1.2'} paddingLeft={'10px'}>
-            Sending the wrong token or from a different network may result in a loss of funds.
+            Sending the wrong token or from a different network may result in a loss of funds.By continuing, you agree to the <a href='https://wheelx.fi/legal/disclaimer' target='_blank' style={{ color: '#8887cb' }}>Terms of Use and Risk Disclosure</a>
           </Box>
         </HStack>
 
