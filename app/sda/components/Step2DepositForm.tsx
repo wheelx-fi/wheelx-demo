@@ -1,5 +1,6 @@
 'use client';
 
+import { useState } from 'react';
 import {
   Box,
   HStack,
@@ -9,6 +10,7 @@ import {
   Button,
   Center,
   Spinner,
+  Dialog,
 } from '@chakra-ui/react';
 import type { ListCollection } from '@chakra-ui/react';
 import type { ChainInfo } from '../../api/types';
@@ -21,6 +23,12 @@ import { TransactionInfoBox } from './TransactionInfoBox';
 import type { EnrichedToken } from './Step1ReceiveForm';
 import { ToggleTip } from '@/components/ui/ToggleTip';
 import { LuInfo } from 'react-icons/lu';
+import { createToaster, Toaster, Toast } from '@chakra-ui/react';
+
+const toaster = createToaster({
+  placement: 'top-end',
+  duration: 2000,
+});
 
 interface Step2DepositFormProps {
   isLoading: boolean;
@@ -77,6 +85,20 @@ export function Step2DepositForm({
   chainIconSize,
   tokenIconSize,
 }: Step2DepositFormProps) {
+  const [dialogOpen, setDialogOpen] = useState(false);
+
+  const tokenSymbol = fromSelectedToken?.symbol ?? '';
+  const chainName = fromSelectedChain?.name ?? '';
+
+  const handleCopyConfirmed = () => {
+    onCopyAddress();
+    setDialogOpen(false);
+    toaster.create({
+      title: 'Copied!',
+      type: 'success',
+    });
+  };
+
   if (isLoading) {
     return (
       <Center py={'40px'}>
@@ -87,6 +109,14 @@ export function Step2DepositForm({
 
   return (
     <Box>
+      <Toaster toaster={toaster}>
+        {(toast) => (
+          <Toast.Root>
+            <Toast.Title>{toast.title}</Toast.Title>
+            <Toast.CloseTrigger />
+          </Toast.Root>
+        )}
+      </Toaster>
       <HStack alignItems="flex-start" gap={'12px'} marginBottom={'15px'}>
         <ChainSelectDropdown
           collection={chainCollection!}
@@ -202,7 +232,7 @@ export function Step2DepositForm({
           h={'30px'}
           fontSize={'12px'}
           borderRadius={'30px'}
-          onClick={onCopyAddress}
+          onClick={() => setDialogOpen(true)}
           disabled={!displayAddress}
         >
           <PiCopy style={{ width: '14px', height: '14px' }} />
@@ -235,6 +265,34 @@ export function Step2DepositForm({
           estimatedTime={txInfo?.estimatedTime ?? '-'}
         />
       </VStack>
+
+      {/* Copy Address Confirmation Dialog */}
+      <Dialog.Root
+        open={dialogOpen}
+        onOpenChange={({ open }) => setDialogOpen(open)}
+        placement="center"
+        motionPreset="scale"
+      >
+        <Dialog.Backdrop />
+        <Dialog.Positioner>
+          <Dialog.Content maxW="400px">
+            <Dialog.Body padding="24px" fontSize="14px" lineHeight="1.6">
+              Please double-check that you are sending <strong style={{ color: '#0F40F5' }}>{tokenSymbol}</strong> on <strong style={{ color: '#0F40F5' }}>{chainName}</strong>. Wrong token or network may result in loss of funds.
+            </Dialog.Body>
+            <Dialog.Footer padding="0 24px 20px 24px">
+              <Button
+                w="100%"
+                h="36px"
+                fontSize="14px"
+                borderRadius="8px"
+                onClick={handleCopyConfirmed}
+              >
+                Confirmed
+              </Button>
+            </Dialog.Footer>
+          </Dialog.Content>
+        </Dialog.Positioner>
+      </Dialog.Root>
 
       {/* Order Result */}
       {showOrderResult && orderStatus ? (
