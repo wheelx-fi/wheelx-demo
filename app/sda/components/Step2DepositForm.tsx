@@ -275,7 +275,7 @@ export function Step2DepositForm({
       >
         <Dialog.Backdrop />
         <Dialog.Positioner>
-          <Dialog.Content maxW="400px">
+          <Dialog.Content maxW={['90vw', '460px', "460px"]}>
             <Dialog.Body padding="24px" fontSize="14px" lineHeight="1.6">
               Please double-check that you are sending <strong style={{ color: '#0F40F5' }}>{tokenSymbol}</strong> on <strong style={{ color: '#0F40F5' }}>{chainName}</strong>. Wrong token or network may result in loss of funds.
             </Dialog.Body>
