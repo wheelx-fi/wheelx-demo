@@ -14,7 +14,7 @@ export const CUSTOM_CHAIN: ChainInfo = {
   name: 'Tron',
   rpc_url: '',
   rpc_fallback: [],
-  chain_icon: 'https://demo.wheelx.fi/images/728126428.png',
+  chain_icon: 'https://www.wheelx.fi/images/networks/728126428.png',
   chain_id: CUSTOM_CHAIN_ID,
   eth_token: NULL_ADDRESS,
   support_kline: false,
