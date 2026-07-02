@@ -16,9 +16,9 @@ import { useSDAClientQuote } from '../api/useSDAClientQuote';
 import { usePollSDAOrder } from '../api/usePollSDAOrder';
 import { calculateAutoSlippage } from '../api/slippage';
 import { isSolanaChain } from '../consts/solana';
-import { isValidEVMAddress, isValidSolanaAddress } from '../utils/address';
+import { isValidEVMAddress, isValidSolanaAddress, isValidTronAddress } from '../utils/address';
 import type { SDAQuoteResponse, TokenInfo } from '../api/types';
-import { ETH_CHAIN_ID, NULL_ADDRESS } from './config';
+import { ETH_CHAIN_ID, NULL_ADDRESS, CUSTOM_CHAIN, CUSTOM_CHAIN_ID, CUSTOM_TOKEN } from './config';
 import { formatPriceImpact, formatEstimatedTime } from './utils';
 import { sda } from '../data/sda';
 import { SdaHeader } from './components/SdaHeader';
@@ -80,7 +80,14 @@ const SDAPage = () => {
   );
 
   const toFilteredChains = useMemo(
-    () => allFilteredChains.filter((c) => toChainIds.has(c.chain_id)),
+    () => {
+      const apiChains = allFilteredChains.filter((c) => toChainIds.has(c.chain_id));
+      // Inject custom chain not returned by backend API
+      if (!apiChains.some((c) => c.chain_id === CUSTOM_CHAIN_ID)) {
+        return [...apiChains, CUSTOM_CHAIN];
+      }
+      return apiChains;
+    },
     [allFilteredChains, toChainIds],
   );
 
@@ -160,7 +167,19 @@ const SDAPage = () => {
 
   // ── Step 1: Enriched tokens (from sda.toToken) ───────────────────
   const enrichedTokens: EnrichedToken[] = useMemo(() => {
-    if (!effectiveChainId || !apiTokens) return [];
+    if (!effectiveChainId) return [];
+    // Custom chain token (not returned by backend API)
+    if (effectiveChainId === CUSTOM_CHAIN_ID) {
+      return [{
+        symbol: CUSTOM_TOKEN.symbol,
+        native: false,
+        logo: CUSTOM_TOKEN.logo,
+        name: CUSTOM_TOKEN.name,
+        address: CUSTOM_TOKEN.address,
+        decimals: CUSTOM_TOKEN.decimals,
+      }];
+    }
+    if (!apiTokens) return [];
     const seen = new Set<string>();
     return apiTokens
       .filter(
@@ -309,8 +328,18 @@ const SDAPage = () => {
     [effectiveChainId],
   );
 
+  const chainIsTron = useMemo(
+    () => effectiveChainId === CUSTOM_CHAIN_ID,
+    [effectiveChainId],
+  );
+
   const addressError = useMemo(() => {
     if (!receiveAddress.trim()) return null;
+    if (chainIsTron) {
+      return isValidTronAddress(receiveAddress.trim())
+        ? null
+        : 'Invalid Tron address (expected base58, 34 chars, starting with T)';
+    }
     if (chainIsSolana) {
       return isValidSolanaAddress(receiveAddress.trim())
         ? null
@@ -319,7 +348,7 @@ const SDAPage = () => {
     return isValidEVMAddress(receiveAddress.trim())
       ? null
       : 'Invalid EVM address (must start with 0x, 42 chars)';
-  }, [receiveAddress, chainIsSolana]);
+  }, [receiveAddress, chainIsSolana, chainIsTron]);
 
   // ── Handlers ────────────────────────────────────────────────────
   const handleChainChange = useCallback((e: { value: string[] }) => {

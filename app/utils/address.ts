@@ -27,6 +27,16 @@ export function isValidSolanaAddress(address: string): boolean {
 }
 
 /**
+ * Validate a Tron (mainnet) address: base58 encoded, 34 characters,
+ * starting with 'T'. Base58 charset excludes 0 O I l.
+ */
+export function isValidTronAddress(address: string): boolean {
+  if (!address || typeof address !== 'string') return false;
+  const tronRegex = /^T[1-9A-HJ-NP-Za-km-z]{33}$/;
+  return tronRegex.test(address);
+}
+
+/**
  * Get the expected address type label for a chain.
  */
 export function getChainAddressTypeLabel(isSolana: boolean): string {

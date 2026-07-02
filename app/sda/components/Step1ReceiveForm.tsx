@@ -4,7 +4,6 @@ import {
   Box,
   HStack,
   VStack,
-  Text,
   Input,
   Button,
   Center,
