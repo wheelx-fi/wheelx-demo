@@ -44,3 +44,6 @@ yarn-error.log*
 # typescript
 *.tsbuildinfo
 next-env.d.ts
+
+# local scripts (may contain generated secrets/keys)
+/scripts/gen-tron-address.mjs

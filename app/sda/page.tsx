@@ -91,9 +91,30 @@ const SDAPage = () => {
     [allFilteredChains, toChainIds],
   );
 
+  // ── Step 1/2 chain / token selections ───────────────────────────
+  const [selectedChainId, setSelectedChainId] = useState<number | null>(null);
+  const [selectedTokenKey, setSelectedTokenKey] = useState<string | null>(null);
+  const [fromChainId, setFromChainId] = useState<number | null>(ETH_CHAIN_ID);
+  const [fromTokenKey, setFromTokenKey] = useState<string | null>(null);
+
+  // ── Computed effective values ───────────────────────────────────
+  const effectiveChainId = selectedChainId ?? toFilteredChains[0]?.chain_id ?? null;
+  const effectiveFromChainId = fromChainId ?? ETH_CHAIN_ID;
+
   const fromFilteredChains = useMemo(
-    () => allFilteredChains.filter((c) => fromChainIds.has(c.chain_id)),
-    [allFilteredChains, fromChainIds],
+    () => {
+      const apiChains = allFilteredChains.filter((c) => fromChainIds.has(c.chain_id));
+      // If step 1 (to) selected Tron, hide Tron in step 2 (from) — Tron has only one token and cannot self-transfer
+      if (effectiveChainId === CUSTOM_CHAIN_ID) {
+        return apiChains;
+      }
+      // Inject custom chain not returned by backend API
+      if (!apiChains.some((c) => c.chain_id === CUSTOM_CHAIN_ID)) {
+        return [...apiChains, CUSTOM_CHAIN];
+      }
+      return apiChains;
+    },
+    [allFilteredChains, fromChainIds, effectiveChainId],
   );
 
   // ── Chain lookup maps ────────────────────────────────────────────
@@ -124,14 +145,6 @@ const SDAPage = () => {
     return map;
   }, [apiTokens]);
 
-  // ── Step 1: Receive chain / token selections ────────────────────
-  const [selectedChainId, setSelectedChainId] = useState<number | null>(null);
-  const [selectedTokenKey, setSelectedTokenKey] = useState<string | null>(null);
-
-  // ── Step 2: From chain / token selections ───────────────────────
-  const [fromChainId, setFromChainId] = useState<number | null>(ETH_CHAIN_ID);
-  const [fromTokenKey, setFromTokenKey] = useState<string | null>(null);
-
   // ── Quote + Order state ─────────────────────────────────────────
   const [quoteResponse, setQuoteResponseLocal] = useState<SDAQuoteResponse | null>(null);
   const [quoteLoading, setQuoteLoading] = useState(false);
@@ -160,10 +173,6 @@ const SDAPage = () => {
       return () => clearTimeout(timer);
     }
   }, [orderData?.status]);
-
-  // ── Computed effective values ───────────────────────────────────
-  const effectiveChainId = selectedChainId ?? toFilteredChains[0]?.chain_id ?? null;
-  const effectiveFromChainId = fromChainId ?? ETH_CHAIN_ID;
 
   // ── Step 1: Enriched tokens (from sda.toToken) ───────────────────
   const enrichedTokens: EnrichedToken[] = useMemo(() => {
@@ -214,7 +223,21 @@ const SDAPage = () => {
 
   // ── Step 2: Enriched tokens (from sda.fromToken) ─────────────────
   const fromEnrichedTokens: EnrichedToken[] = useMemo(() => {
-    if (!effectiveFromChainId || !apiTokens) return [];
+    if (!effectiveFromChainId) return [];
+    // Custom chain token (not returned by backend API)
+    if (effectiveFromChainId === CUSTOM_CHAIN_ID) {
+      // If step 1 (to) is also Tron, it cannot be selected — Tron has only one token and cannot self-transfer
+      if (effectiveChainId === CUSTOM_CHAIN_ID) return [];
+      return [{
+        symbol: CUSTOM_TOKEN.symbol,
+        native: false,
+        logo: CUSTOM_TOKEN.logo,
+        name: CUSTOM_TOKEN.name,
+        address: CUSTOM_TOKEN.address,
+        decimals: CUSTOM_TOKEN.decimals,
+      }];
+    }
+    if (!apiTokens) return [];
     const seen = new Set<string>();
     const toChainId = effectiveChainId;
     const toTokenSymbol = displayTokenKey
@@ -257,6 +280,16 @@ const SDAPage = () => {
   }, [effectiveFromChainId, fromEnrichedTokens]);
 
   const displayFromTokenKey = fromTokenKey ?? effectiveFromTokenKey;
+
+  // If step 1 (to) selected Tron and step 2 (from) is currently Tron, reset from to ETH
+  // (Tron has only one token and cannot self-transfer)
+  useEffect(() => {
+    if (effectiveChainId === CUSTOM_CHAIN_ID && fromChainId === CUSTOM_CHAIN_ID) {
+      // eslint-disable-next-line react-hooks/set-state-in-effect
+      setFromChainId(ETH_CHAIN_ID);
+      setFromTokenKey(null);
+    }
+  }, [effectiveChainId, fromChainId]);
 
   // ── Chakra collections ──────────────────────────────────────────
   const toChainCollection = useMemo(() => {
