@@ -179,12 +179,12 @@ export function Step2DepositForm({
         {receiveChainIsTron && (
           <Box
             w={'100%'}
-            padding={'6px 10px'}
+            padding={'0px 10px'}
             // backgroundColor={'rgba(252,202,0,.13)'}
             borderRadius={'5px'}
             fontSize={'12px'}
             textAlign={'center'}
-            marginBottom={'8px'}
+            // marginBottom={'8px'}
             color={'#666'}
           >
             (Min: $3)
@@ -269,7 +269,7 @@ export function Step2DepositForm({
             style={{ width: '20px', height: '20px', color: 'FCCA00', flexShrink: 0 }}
           />
           <Box lineHeight={'1.2'} paddingLeft={'10px'}>
-            {receiveChainIsTron && <>A minimum deposit of <strong style={{ color: '#0F40F5' }}>$3</strong> is required for the Tron network. </>}Sending the wrong token or from a different network may result in a loss of funds.By continuing, you agree to the <a href='https://wheelx.fi/legal/disclaimer' target='_blank' style={{ color: '#8887cb' }}>Terms of Use and Risk Disclosure</a>
+            {receiveChainIsTron && <>The minimum transfer amount is <strong style={{ color: '#0F40F5' }}>$3</strong>. </>}Sending the wrong token or from a different network may result in a loss of funds.By continuing, you agree to the <a href='https://wheelx.fi/legal/disclaimer' target='_blank' style={{ color: '#8887cb' }}>Terms of Use and Risk Disclosure</a>
           </Box>
         </HStack>
 
