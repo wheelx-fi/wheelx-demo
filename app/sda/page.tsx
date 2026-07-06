@@ -644,6 +644,7 @@ const SDAPage = () => {
             orderStatus={orderData?.status}
             showOrderResult={showOrderResult}
             showDemoResult={showDemoResult}
+            receiveChainIsTron={chainIsTron}
             chainIconSize={chainIconSize}
             tokenIconSize={tokenIconSize}
           />

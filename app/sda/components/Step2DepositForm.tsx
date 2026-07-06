@@ -54,6 +54,7 @@ interface Step2DepositFormProps {
   orderStatus: string | undefined;
   showOrderResult: boolean;
   showDemoResult: boolean;
+  receiveChainIsTron: boolean;
   chainIconSize: { w: string; h: string };
   tokenIconSize: { w: string; h: string };
 }
@@ -82,6 +83,7 @@ export function Step2DepositForm({
   orderStatus,
   showOrderResult,
   showDemoResult,
+  receiveChainIsTron,
   chainIconSize,
   tokenIconSize,
 }: Step2DepositFormProps) {
@@ -173,6 +175,22 @@ export function Step2DepositForm({
           </ToggleTip>
         </HStack>
 
+        {/* Minimum deposit hint (Tron receive network only) */}
+        {receiveChainIsTron && (
+          <Box
+            w={'100%'}
+            padding={'6px 10px'}
+            // backgroundColor={'rgba(252,202,0,.13)'}
+            borderRadius={'5px'}
+            fontSize={'12px'}
+            textAlign={'center'}
+            marginBottom={'8px'}
+            color={'#666'}
+          >
+            (Min: $3)
+          </Box>
+        )}
+
         {/* QR Code Card */}
         <Box
           w={'160px'}
@@ -251,7 +269,7 @@ export function Step2DepositForm({
             style={{ width: '20px', height: '20px', color: 'FCCA00', flexShrink: 0 }}
           />
           <Box lineHeight={'1.2'} paddingLeft={'10px'}>
-            Sending the wrong token or from a different network may result in a loss of funds.By continuing, you agree to the <a href='https://wheelx.fi/legal/disclaimer' target='_blank' style={{ color: '#8887cb' }}>Terms of Use and Risk Disclosure</a>
+            {receiveChainIsTron && <>A minimum deposit of <strong style={{ color: '#0F40F5' }}>$3</strong> is required for the Tron network. </>}Sending the wrong token or from a different network may result in a loss of funds.By continuing, you agree to the <a href='https://wheelx.fi/legal/disclaimer' target='_blank' style={{ color: '#8887cb' }}>Terms of Use and Risk Disclosure</a>
           </Box>
         </HStack>
 
@@ -277,7 +295,7 @@ export function Step2DepositForm({
         <Dialog.Positioner>
           <Dialog.Content maxW={['90vw', '460px', "460px"]}>
             <Dialog.Body padding="24px" fontSize="14px" lineHeight="1.6">
-              Please double-check that you are sending <strong style={{ color: '#0F40F5' }}>{tokenSymbol}</strong> on <strong style={{ color: '#0F40F5' }}>{chainName}</strong>. Wrong token or network may result in loss of funds.
+              Please double-check that you are sending {receiveChainIsTron ? <>at least <strong style={{ color: '#0F40F5' }}>$3</strong> worth of </> : null}<strong style={{ color: '#0F40F5' }}>{tokenSymbol}</strong> on <strong style={{ color: '#0F40F5' }}>{chainName}</strong>. Wrong token or network may result in loss of funds.
             </Dialog.Body>
             <Dialog.Footer padding="0 24px 20px 24px">
               <Button
