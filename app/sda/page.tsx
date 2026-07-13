@@ -31,11 +31,29 @@ import { Step2DepositForm } from './components/Step2DepositForm';
 const chainIconSize = { w: '18px', h: '18px' };
 const tokenIconSize = { w: '18px', h: '18px' };
 
+// Convert a decimal amount string to base units (wei-like) for a token with
+// `decimals` precision. Handles different token precisions and truncates
+// extra fractional digits beyond `decimals`.
+function toBaseUnits(value: string, decimals: number): string {
+  const trimmed = value.trim();
+  if (!trimmed) return '0';
+  const negative = trimmed.startsWith('-');
+  const cleaned = negative ? trimmed.slice(1) : trimmed;
+  const [intPartRaw, fracPartRaw = ''] = cleaned.split('.');
+  const intPart = intPartRaw === '' ? '0' : intPartRaw;
+  const fracPart = (fracPartRaw + '0'.repeat(decimals)).slice(0, decimals);
+  let result = intPart + fracPart;
+  result = result.replace(/^0+(?=\d)/, '');
+  if (result === '') result = '0';
+  return negative ? '-' + result : result;
+}
+
 // ── Component ──────────────────────────────────────────────────────────
 const SDAPage = () => {
   // ── Core state ──────────────────────────────────────────────────
   const [activeIndex, setActiveIndex] = useState(0);
   const [receiveAddress, setReceiveAddress] = useState('');
+  const [amount, setAmount] = useState('');
   const [qrCodeUrl, setQrCodeUrl] = useState('');
   const [copied, setCopied] = useState(false);
   const [isExpanded, setIsExpanded] = useState(false);
@@ -383,6 +401,16 @@ const SDAPage = () => {
       : 'Invalid EVM address (must start with 0x, 42 chars)';
   }, [receiveAddress, chainIsSolana, chainIsTron]);
 
+  // Amount must be a number greater than 0
+  const amountError = useMemo(() => {
+    if (!amount.trim()) return null;
+    const num = Number(amount);
+    if (Number.isNaN(num) || num <= 0) {
+      return 'Only numbers greater than 0 are allowed';
+    }
+    return null;
+  }, [amount]);
+
   // ── Handlers ────────────────────────────────────────────────────
   const handleChainChange = useCallback((e: { value: string[] }) => {
     const id = Number(e.value[0]);
@@ -497,6 +525,13 @@ const SDAPage = () => {
       const fromTokenInfo = tokensMap.get(`${effectiveFromChainId}:${fromTokenAddr?.toLowerCase()}`) ?? null;
       const toTokenInfo = tokensMap.get(`${effectiveChainId}:${toTokenAddr?.toLowerCase()}`) ?? null;
 
+      // Quote is exact_out → amount is the receive (to_token) amount in base units.
+      // Different tokens have different precisions, so scale by to_token decimals.
+      const amountBaseUnits = toBaseUnits(
+        amount,
+        toTokenInfo?.decimals ?? selectedToken?.decimals ?? 18,
+      );
+
       const autoSlippage = calculateAutoSlippage(
         slippagePolicies,
         fromTokenInfo,
@@ -512,10 +547,11 @@ const SDAPage = () => {
           to_token: toTokenAddr,
           from_address: NULL_ADDRESS,
           to_address: receiveAddress,
-          amount: '0',
+          amount: amountBaseUnits,
           slippage: autoSlippage,
           to_platform_id: toPlatformId,
           use_deposit_address: true,
+          exact_out: true,
         });
 
         setQuoteResponseLocal(res);
@@ -537,7 +573,7 @@ const SDAPage = () => {
     doQuote();
     return () => { cancelQuote(); };
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [activeIndex, effectiveFromChainId, effectiveChainId, displayFromTokenKey, displayTokenKey, receiveAddress, slippagePolicies]);
+  }, [activeIndex, effectiveFromChainId, effectiveChainId, displayFromTokenKey, displayTokenKey, receiveAddress, amount, slippagePolicies]);
 
   // ── Order polling effect ─────────────────────────────────────────
   const prevRequestIdRef = useRef<string | null>(null);
@@ -612,6 +648,9 @@ const SDAPage = () => {
             receiveAddress={receiveAddress}
             onAddressChange={setReceiveAddress}
             addressError={addressError}
+            amount={amount}
+            onAmountChange={setAmount}
+            amountError={amountError}
             onNext={handleNext}
             chainIconSize={chainIconSize}
             tokenIconSize={tokenIconSize}

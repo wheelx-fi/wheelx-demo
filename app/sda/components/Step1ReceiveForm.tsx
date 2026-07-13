@@ -39,6 +39,9 @@ interface Step1ReceiveFormProps {
   receiveAddress: string;
   onAddressChange: (value: string) => void;
   addressError: string | null;
+  amount: string;
+  onAmountChange: (value: string) => void;
+  amountError: string | null;
   onNext: () => void;
   chainIconSize: { w: string; h: string };
   tokenIconSize: { w: string; h: string };
@@ -59,6 +62,9 @@ export function Step1ReceiveForm({
   receiveAddress,
   onAddressChange,
   addressError,
+  amount,
+  onAmountChange,
+  amountError,
   onNext,
   chainIconSize,
   tokenIconSize,
@@ -119,10 +125,44 @@ export function Step1ReceiveForm({
           />
         </VStack>
       </HStack>
+      <HStack alignItems="flex-start" gap={'12px'} marginBottom={amountError ? '5px' : '15px'}>
+        <VStack flex={1} gap={0}>
+          <Box
+            fontSize={'12px'}
+            color={'txt-weak'}
+            marginBottom={'5px'}
+            whiteSpace={'nowrap'}
+            w={'100%'}
+          >
+            Amount
+            {/* <span style={{ color: 'red' }}>*</span> */}
+          </Box>
+          <Input
+            type="text"
+            paddingLeft={'10px'}
+            color="txt-normal"
+            value={amount}
+            onChange={(e) => {
+              // Allow only digits and a single decimal point
+              const sanitized = e.target.value
+                .replace(/[^\d.]/g, '')
+                .replace(/(\..*)\./g, '$1');
+              onAmountChange(sanitized);
+            }}
+            borderColor={amountError ? 'red.500' : undefined}
+          />
+        </VStack>
+      </HStack>
 
       {addressError && (
         <Box color={'red.500'} fontSize={'11px'} marginBottom={'15px'} paddingLeft={'2px'}>
           {addressError}
+        </Box>
+      )}
+
+      {amountError && (
+        <Box color={'red.500'} fontSize={'11px'} marginBottom={'15px'} paddingLeft={'2px'}>
+          {amountError}
         </Box>
       )}
 

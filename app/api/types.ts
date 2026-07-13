@@ -75,6 +75,7 @@ export interface SDAQuoteRequest {
   sponsor_gas?: boolean;
   quote_only?: boolean;
   use_deposit_address: boolean;
+  exact_out?: boolean;
 }
 
 export interface SDAQuoteResponse {
