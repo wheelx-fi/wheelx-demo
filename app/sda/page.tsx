@@ -198,6 +198,8 @@ const SDAPage = () => {
   const [quoteResponse, setQuoteResponseLocal] = useState<SDAQuoteResponse | null>(null);
   const [quoteLoading, setQuoteLoading] = useState(false);
   const [quoteError, setQuoteError] = useState<string | null>(null);
+  // Bump this to manually re-trigger the quote request (e.g. after countdown expires).
+  const [quoteRefreshTick, setQuoteRefreshTick] = useState(0);
   const pendingQuoteRef = useRef(false);
   const [showDemoResult, setShowDemoResult] = useState(false);
   const [showOrderResult, setShowOrderResult] = useState(false);
@@ -479,6 +481,21 @@ const SDAPage = () => {
     setActiveIndex(1);
   }, [selectedChain, selectedToken, receiveAddress, saveFormData, addressError]);
 
+  // Stop order polling and re-fetch the quote (used when the quote countdown expires).
+  const handleRefreshQuote = useCallback(() => {
+    stopPolling();
+    resetOrder();
+    setIsPollingOrder(false);
+    setQuoteRefreshTick((t) => t + 1);
+  }, [stopPolling, resetOrder, setIsPollingOrder]);
+
+  // Stop the order request immediately when the quote countdown expires.
+  const handleCountdownExpired = useCallback(() => {
+    stopPolling();
+    resetOrder();
+    setIsPollingOrder(false);
+  }, [stopPolling, resetOrder, setIsPollingOrder]);
+
   // ── QR Code generation ──────────────────────────────────────────
   const depositAddress = quoteResponse?.deposit_address || '';
   const chainIsSol = isSolanaChain(effectiveFromChainId ?? undefined);
@@ -605,7 +622,7 @@ const SDAPage = () => {
     doQuote();
     return () => { cancelQuote(); };
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [activeIndex, effectiveFromChainId, effectiveChainId, displayFromTokenKey, displayTokenKey, receiveAddress, amount, slippagePolicies]);
+  }, [activeIndex, effectiveFromChainId, effectiveChainId, displayFromTokenKey, displayTokenKey, receiveAddress, amount, slippagePolicies, quoteRefreshTick]);
 
   // ── Order polling effect ─────────────────────────────────────────
   const prevRequestIdRef = useRef<string | null>(null);
@@ -650,12 +667,19 @@ const SDAPage = () => {
   // amount_in (base units) → decimal string + token symbol, e.g. "1USDT".
   const depositAmountText = useMemo(() => {
     if (!quoteResponse?.amount_in || !fromSelectedToken) return null;
+    // Stablecoins are priced ~1:1 to USD, so 2 decimals are enough;
+    // otherwise keep 6 decimals of precision.
+    const fromTokenInfo = tokensMap.get(
+      `${effectiveFromChainId}:${fromSelectedToken.address?.toLowerCase()}`,
+    );
+    const isStablecoin = fromTokenInfo?.categories?.includes('stablecoin') ?? false;
+    const maxFractionDigits = isStablecoin ? 2 : 6;
     const value = roundAmount(
       fromBaseUnits(quoteResponse.amount_in, fromSelectedToken.decimals),
-      6,
+      maxFractionDigits,
     );
-    return `${value}${fromSelectedToken.symbol}`;
-  }, [quoteResponse, fromSelectedToken]);
+    return `${value}-${fromSelectedToken.symbol}`;
+  }, [quoteResponse, fromSelectedToken, tokensMap, effectiveFromChainId]);
 
   // ── Render ──────────────────────────────────────────────────────
   return (
@@ -717,6 +741,9 @@ const SDAPage = () => {
             depositAmountText={depositAmountText}
             amount={amount}
             quoteLoading={quoteLoading}
+            quoteRequestId={quoteResponse?.request_id ?? null}
+            onRefreshQuote={handleRefreshQuote}
+            onCountdownExpired={handleCountdownExpired}
             quoteError={quoteError}
             qrCodeUrl={qrCodeUrl}
             displayAddress={displayAddress}

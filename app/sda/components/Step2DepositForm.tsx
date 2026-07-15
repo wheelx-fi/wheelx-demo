@@ -1,6 +1,6 @@
 'use client';
 
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import {
   Box,
   HStack,
@@ -22,13 +22,17 @@ import { TokenSelectDropdown } from './TokenSelectDropdown';
 import { TransactionInfoBox } from './TransactionInfoBox';
 import type { EnrichedToken } from './Step1ReceiveForm';
 import { ToggleTip } from '@/components/ui/ToggleTip';
-import { LuInfo } from 'react-icons/lu';
+import { LuInfo, LuRefreshCw } from 'react-icons/lu';
 import { createToaster, Toaster, Toast } from '@chakra-ui/react';
 
 const toaster = createToaster({
   placement: 'top-end',
   duration: 2000,
 });
+
+// Quote validity countdown.
+// NOTE: temporarily 30s for debugging; the real value is 5 minutes (5 * 60 * 1000).
+const QUOTE_COUNTDOWN_MS = 5 * 60 * 1000;
 
 interface Step2DepositFormProps {
   isLoading: boolean;
@@ -45,6 +49,9 @@ interface Step2DepositFormProps {
   depositAmountText: string | null;
   amount: string;
   quoteLoading: boolean;
+  quoteRequestId: string | null;
+  onRefreshQuote: () => void;
+  onCountdownExpired?: () => void;
   quoteError: string | null;
   qrCodeUrl: string;
   displayAddress: string;
@@ -76,6 +83,9 @@ export function Step2DepositForm({
   depositAmountText,
   amount,
   quoteLoading,
+  quoteRequestId,
+  onRefreshQuote,
+  onCountdownExpired,
   quoteError,
   qrCodeUrl,
   displayAddress,
@@ -96,6 +106,40 @@ export function Step2DepositForm({
   const tokenSymbol = fromSelectedToken?.symbol ?? '';
   const chainName = fromSelectedChain?.name ?? '';
   const amountIsZero = amount.trim() === '' || Number(amount) === 0;
+  const amountAndToken = depositAmountText?.split('-')
+
+  // ── Quote validity countdown ──────────────────────────────────────
+  const [expireAt, setExpireAt] = useState<number | null>(null);
+  const [now, setNow] = useState(() => Date.now());
+
+  // Start / reset the 5-min countdown whenever a new quote succeeds.
+  useEffect(() => {
+    if (quoteRequestId && !quoteLoading) {
+      // eslint-disable-next-line react-hooks/set-state-in-effect
+      setExpireAt(Date.now() + QUOTE_COUNTDOWN_MS);
+      setNow(Date.now());
+    }
+  }, [quoteRequestId, quoteLoading]);
+
+  // Tick every second while counting down.
+  useEffect(() => {
+    if (expireAt === null) return;
+    const timer = setInterval(() => setNow(Date.now()), 1000);
+    return () => clearInterval(timer);
+  }, [expireAt]);
+
+  const secondsLeft =
+    expireAt === null ? null : Math.max(0, Math.ceil((expireAt - now) / 1000));
+  const countdownExpired = secondsLeft === 0;
+
+
+  // When the countdown expires, immediately stop the order request.
+  // A new order only starts after the user refreshes and the quote re-succeeds.
+  useEffect(() => {
+    if (countdownExpired) {
+      onCountdownExpired?.();
+    }
+  }, [countdownExpired, onCountdownExpired]);
 
   const handleCopyConfirmed = () => {
     onCopyAddress();
@@ -124,6 +168,62 @@ export function Step2DepositForm({
           </Toast.Root>
         )}
       </Toaster>
+      {depositAmountText && !quoteLoading && (
+        <VStack padding={'10px 0'} w={'100%'} >
+          <Box color={'#6C6C6C'}>Amount to Transfer</Box>
+          <HStack color={'#333'} alignItems="flex-end" h={'36px'}>
+            <Box fontSize={'36px'} fontWeight={'bold'} lineHeight={1}>{amountAndToken?.[0]}</Box>
+            <Box
+              position={'relative'}
+              w={'20px'}
+              h={'20px'}
+            // borderRadius={'36px'}
+            // backgroundColor={'#fff'}
+            >
+              <Image
+                src={fromSelectedChain?.chain_icon || '/images/default-token-icon.png'}
+                alt="From chain"
+                w={'20px'}
+                h={'20px'}
+                position={'absolute'}
+                left={'50%'}
+                top={'50%'}
+                transform={'translate3d(-50%,-50%,0)'}
+                borderRadius={'full'}
+              />
+              <Image
+                src={fromSelectedToken?.logo || '/images/default-token-icon.png'}
+                alt="From token"
+                w={'10px'}
+                h={'10px'}
+                position={'absolute'}
+                bottom={'0px'}
+                right={'-3px'}
+                borderRadius={'full'}
+              />
+            </Box>
+            <Box fontSize={'14px'}>{amountAndToken?.[1]}</Box>
+          </HStack>
+        </VStack>
+      )}
+
+      {countdownExpired && (
+        <HStack w={'250px'} margin={'0 auto 15px'} color={'red'}>
+          Payment quote expired. Please refresh to get the latest quote and deposit address.
+          <Button
+            variant="ghost"
+            minW={0}
+            h={'20px'}
+            flexShrink={0}
+            onClick={onRefreshQuote}
+            loading={quoteLoading}
+            aria-label="Refresh quote"
+          >
+            <LuRefreshCw style={{ width: '16px', height: '16px' }} />
+          </Button>
+        </HStack>
+      )}
+
       <HStack alignItems="flex-start" gap={'12px'} marginBottom={'15px'}>
         <ChainSelectDropdown
           collection={chainCollection!}
@@ -197,7 +297,7 @@ export function Step2DepositForm({
         )}
 
         {/* Required deposit amount (from quote amount_in, scaled by step-2 token) */}
-        {depositAmountText && !quoteLoading && (
+        {/* {depositAmountText && !quoteLoading && (
           <Box
             w={'100%'}
             padding={'0px 10px'}
@@ -208,7 +308,7 @@ export function Step2DepositForm({
           >
             (Min <strong>{depositAmountText}</strong>)
           </Box>
-        )}
+        )} */}
 
         {/* QR Code Card */}
         <Box
