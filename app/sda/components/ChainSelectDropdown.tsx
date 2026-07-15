@@ -56,7 +56,7 @@ export function ChainSelectDropdown({
             )}
           </Select.Trigger>
           <Select.IndicatorGroup>
-            <Select.Indicator />
+            <Select.Indicator marginRight={'8px'} />
           </Select.IndicatorGroup>
         </Select.Control>
         <Portal>

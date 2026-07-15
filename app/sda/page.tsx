@@ -48,6 +48,37 @@ function toBaseUnits(value: string, decimals: number): string {
   return negative ? '-' + result : result;
 }
 
+// Convert a base-units (wei-like) integer string back to a decimal amount
+// string, trimmed of trailing zeros, for a token with `decimals` precision.
+function fromBaseUnits(value: string, decimals: number): string {
+  const trimmed = value.trim();
+  if (!trimmed || trimmed === '0') return '0';
+  const negative = trimmed.startsWith('-');
+  const cleaned = negative ? trimmed.slice(1) : trimmed;
+  const padded = cleaned.padStart(decimals + 1, '0');
+  const intPart = padded.slice(0, padded.length - decimals);
+  const fracPart = padded.slice(padded.length - decimals).replace(/0+$/, '');
+  const result = fracPart ? `${intPart}.${fracPart}` : intPart;
+  return negative ? '-' + result : result;
+}
+
+// Round a decimal amount string to at most `maxFractionDigits` digits
+// (half-up), leaving fewer-precision values untouched, for display only.
+function roundAmount(value: string, maxFractionDigits: number): string {
+  const trimmed = value.trim();
+  if (!trimmed || trimmed === '0') return '0';
+  const [intPartRaw, fracPartRaw = ''] = trimmed.split('.');
+  const intPart = intPartRaw === '' ? '0' : intPartRaw;
+  if (fracPartRaw.length <= maxFractionDigits) {
+    const frac = fracPartRaw.replace(/0+$/, '');
+    return frac ? `${intPart}.${frac}` : intPart;
+  }
+  const factor = 10 ** maxFractionDigits;
+  const rounded = Math.round(Number(`${intPart}.${fracPartRaw}`) * factor) / factor;
+  const str = rounded.toFixed(maxFractionDigits).replace(/0+$/, '').replace(/\.$/, '');
+  return str === '' ? '0' : str;
+}
+
 // ── Component ──────────────────────────────────────────────────────────
 const SDAPage = () => {
   // ── Core state ──────────────────────────────────────────────────
@@ -614,6 +645,17 @@ const SDAPage = () => {
     };
   }, [quoteResponse]);
 
+  // Deposit amount the user needs to send, based on the step-2 selected token.
+  // amount_in (base units) → decimal string + token symbol, e.g. "1USDT".
+  const depositAmountText = useMemo(() => {
+    if (!quoteResponse?.amount_in || !fromSelectedToken) return null;
+    const value = roundAmount(
+      fromBaseUnits(quoteResponse.amount_in, fromSelectedToken.decimals),
+      6,
+    );
+    return `${value}${fromSelectedToken.symbol}`;
+  }, [quoteResponse, fromSelectedToken]);
+
   // ── Render ──────────────────────────────────────────────────────
   return (
     <Box padding={['40px 20px', '40px 0', '40px 0']}>
@@ -671,6 +713,7 @@ const SDAPage = () => {
             onFromTokenChange={handleFromTokenChange}
             fromSelectedToken={fromSelectedToken}
             fromEnrichedTokens={fromEnrichedTokens}
+            depositAmountText={depositAmountText}
             quoteLoading={quoteLoading}
             quoteError={quoteError}
             qrCodeUrl={qrCodeUrl}

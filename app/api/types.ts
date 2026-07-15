@@ -81,6 +81,7 @@ export interface SDAQuoteRequest {
 export interface SDAQuoteResponse {
   request_id?: string;
   amount_out: string;
+  amount_in?: string;
   approve?: {
     token: string;
     spender: string;
