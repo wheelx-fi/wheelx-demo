@@ -43,6 +43,7 @@ interface Step2DepositFormProps {
   fromSelectedToken: EnrichedToken | null;
   fromEnrichedTokens: EnrichedToken[];
   depositAmountText: string | null;
+  amount: string;
   quoteLoading: boolean;
   quoteError: string | null;
   qrCodeUrl: string;
@@ -73,6 +74,7 @@ export function Step2DepositForm({
   fromSelectedToken,
   fromEnrichedTokens,
   depositAmountText,
+  amount,
   quoteLoading,
   quoteError,
   qrCodeUrl,
@@ -85,7 +87,7 @@ export function Step2DepositForm({
   orderStatus,
   showOrderResult,
   showDemoResult,
-  // receiveChainIsTron,
+  receiveChainIsTron,
   chainIconSize,
   tokenIconSize,
 }: Step2DepositFormProps) {
@@ -93,6 +95,7 @@ export function Step2DepositForm({
 
   const tokenSymbol = fromSelectedToken?.symbol ?? '';
   const chainName = fromSelectedChain?.name ?? '';
+  const amountIsZero = amount.trim() === '' || Number(amount) === 0;
 
   const handleCopyConfirmed = () => {
     onCopyAddress();
@@ -178,7 +181,7 @@ export function Step2DepositForm({
         </HStack>
 
         {/* Minimum deposit hint (Tron receive network only) */}
-        {/* {receiveChainIsTron && (
+        {receiveChainIsTron && amountIsZero && (
           <Box
             w={'100%'}
             padding={'0px 10px'}
@@ -191,7 +194,7 @@ export function Step2DepositForm({
           >
             (Min: $3)
           </Box>
-        )} */}
+        )}
 
         {/* Required deposit amount (from quote amount_in, scaled by step-2 token) */}
         {depositAmountText && !quoteLoading && (
@@ -285,7 +288,7 @@ export function Step2DepositForm({
             style={{ width: '20px', height: '20px', color: 'FCCA00', flexShrink: 0 }}
           />
           <Box lineHeight={'1.2'} paddingLeft={'10px'}>
-            {/* {receiveChainIsTron && <>The minimum transfer amount is <strong style={{ color: '#0F40F5' }}>$3</strong>. </>} */}
+            {receiveChainIsTron && amountIsZero && <>The minimum transfer amount is <strong style={{ color: '#0F40F5' }}>$3</strong>. </>}
             Sending the wrong token or from a different network may result in a loss of funds.By continuing, you agree to the <a href='https://wheelx.fi/legal/disclaimer' target='_blank' style={{ color: '#8887cb' }}>Terms of Use and Risk Disclosure</a>
           </Box>
         </HStack>
@@ -313,7 +316,7 @@ export function Step2DepositForm({
           <Dialog.Content maxW={['90vw', '460px', "460px"]}>
             <Dialog.Body padding="24px" fontSize="14px" lineHeight="1.6">
               Please double-check that you are sending
-              {/* {receiveChainIsTron ? <>at least <strong style={{ color: '#0F40F5' }}>$3</strong> worth of </> : null} */}
+              {receiveChainIsTron && amountIsZero ? <>at least <strong style={{ color: '#0F40F5' }}>$3</strong> worth of </> : null}
               <strong style={{ color: '#0F40F5' }}> {tokenSymbol}</strong> on <strong style={{ color: '#0F40F5' }}>{chainName}</strong>. Wrong token or network may result in loss of funds.
             </Dialog.Body>
             <Dialog.Footer padding="0 24px 20px 24px">

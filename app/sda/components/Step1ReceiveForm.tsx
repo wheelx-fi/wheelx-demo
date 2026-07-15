@@ -112,7 +112,7 @@ export function Step1ReceiveForm({
             w={'100%'}
           >
             Receive Amount
-            <span style={{ color: 'red' }}>*</span>
+            {/* <span style={{ color: 'red' }}>*</span> */}
           </Box>
           <Input
             type="text"

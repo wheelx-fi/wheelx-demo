@@ -582,7 +582,8 @@ const SDAPage = () => {
           slippage: autoSlippage,
           to_platform_id: toPlatformId,
           use_deposit_address: true,
-          exact_out: true,
+          // exact_out only when an amount is entered; empty amount → exact_in mode
+          exact_out: amount.trim() !== '',
         });
 
         setQuoteResponseLocal(res);
@@ -714,6 +715,7 @@ const SDAPage = () => {
             fromSelectedToken={fromSelectedToken}
             fromEnrichedTokens={fromEnrichedTokens}
             depositAmountText={depositAmountText}
+            amount={amount}
             quoteLoading={quoteLoading}
             quoteError={quoteError}
             qrCodeUrl={qrCodeUrl}
