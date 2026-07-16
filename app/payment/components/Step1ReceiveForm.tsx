@@ -14,6 +14,8 @@ import type { ChainInfo } from '../../api/types';
 import { HiArrowLongRight } from 'react-icons/hi2';
 import { ChainSelectDropdown } from './ChainSelectDropdown';
 import { TokenSelectDropdown } from './TokenSelectDropdown';
+import { ToggleTip } from '@/components/ui/ToggleTip';
+import { LuInfo } from 'react-icons/lu';
 
 export interface EnrichedToken {
   symbol: string;
@@ -104,16 +106,24 @@ export function Step1ReceiveForm({
       </HStack>
       <HStack alignItems="flex-start" gap={'12px'} marginBottom={amountError ? '5px' : '15px'}>
         <VStack flex={1} gap={0}>
-          <Box
+          <HStack
             fontSize={'12px'}
             color={'txt-weak'}
             marginBottom={'5px'}
             whiteSpace={'nowrap'}
             w={'100%'}
+            gap={'2px'}
           >
-            Receive Amount
+            Receive Amount <ToggleTip
+              content="Enter the amount you want to receive. The sender will cover the network gas fee and transaction fee, so you'll receive the full amount with no deductions."
+              contentProps={{ maxWidth: '280px' }}
+            >
+              <Button variant="ghost" minW={0} h={'12px'}>
+                <LuInfo style={{ width: '12px', height: '12px' }} />
+              </Button>
+            </ToggleTip>
             {/* <span style={{ color: 'red' }}>*</span> */}
-          </Box>
+          </HStack>
           <Input
             type="text"
             paddingLeft={'10px'}

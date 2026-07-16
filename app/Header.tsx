@@ -29,7 +29,7 @@ const Header = () => {
           fontSize={['16px', '20px', '24px']}
           lineHeight={'1.5'}
         >
-          WheelX Demo
+          WheelX Payment Demo
         </Heading>
       </HStack>
       <HStack gap={'10px'}>

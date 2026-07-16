@@ -33,7 +33,7 @@ export function SdaHeader({ activeIndex, onStepChange }: SdaHeaderProps) {
         marginRight={'5px'}
         fontWeight={'bold'}
       >
-        Smart Deposit
+        WheelX Payment
       </Text>
       <Text fontSize={['10px', '12px', '14px']} color={'txt-weak'} flex={1}>
         Demo
@@ -71,7 +71,7 @@ export function SdaHeader({ activeIndex, onStepChange }: SdaHeaderProps) {
             </Text>
             <Text
               color={activeIndex === index ? '#fff' : '#000'}
-              fontSize={['10px', '12px', '14px']}
+              fontSize={['10px', '12px', '12px']}
             >
               {item}
             </Text>

@@ -1,7 +1,7 @@
 import type { Metadata } from 'next';
 
 export const metadata: Metadata = {
-  title: 'Smart Deposit - WheelX',
+  title: 'WheelX Payment — Making Crypto Payments Easier',
   description:
     'Smart Deposit powered by WheelX Smart Payment Service. Deposit crypto assets across multiple networks including Ethereum with USDT tokens.',
   keywords: [
@@ -14,7 +14,7 @@ export const metadata: Metadata = {
     'Blockchain',
   ],
   openGraph: {
-    title: 'Smart Deposit - WheelX',
+    title: 'WheelX Payment — Making Crypto Payments Easier',
     description:
       'Smart Deposit powered by WheelX Smart Payment Service. Deposit crypto assets across multiple networks.',
     type: 'website',

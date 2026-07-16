@@ -17,7 +17,7 @@ export function SdaFooter() {
       fontSize={'10px'}
       lineHeight={'40px'}
     >
-      Powered By WheelX Smart Payment Service
+      Powered By WheelX Payment
     </Box>
   );
 }

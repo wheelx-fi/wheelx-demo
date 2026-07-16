@@ -19,7 +19,7 @@ import { RiErrorWarningFill } from 'react-icons/ri';
 import SdaResult from '@/components/Sda/Result';
 import { ChainSelectDropdown } from './ChainSelectDropdown';
 import { TokenSelectDropdown } from './TokenSelectDropdown';
-import { TransactionInfoBox } from './TransactionInfoBox';
+// import { TransactionInfoBox } from './TransactionInfoBox';
 import type { EnrichedToken } from './Step1ReceiveForm';
 import { ToggleTip } from '@/components/ui/ToggleTip';
 import { LuInfo, LuRefreshCw } from 'react-icons/lu';
@@ -91,9 +91,9 @@ export function Step2DepositForm({
   displayAddress,
   copied,
   onCopyAddress,
-  isExpanded,
-  onToggleExpand,
-  txInfo,
+  // isExpanded,
+  // onToggleExpand,
+  // txInfo,
   orderStatus,
   showOrderResult,
   showDemoResult,
@@ -169,7 +169,7 @@ export function Step2DepositForm({
         )}
       </Toaster>
       {depositAmountText && !quoteLoading && (
-        <VStack padding={'10px 0'} w={'100%'} >
+        <VStack padding={'10px 0 20px'} w={'100%'} >
           <Box color={'#6C6C6C'}>Amount to Transfer</Box>
           <HStack color={'#333'} alignItems="flex-end" h={'36px'}>
             <Box fontSize={'36px'} fontWeight={'bold'} lineHeight={1}>{amountAndToken?.[0]}</Box>
@@ -382,7 +382,7 @@ export function Step2DepositForm({
           padding={'8px 10px'}
           backgroundColor={'rgba(252,202,0,.13)'}
           borderRadius={'5px'}
-          marginBottom={'5px'}
+          marginBottom={'20px'}
         >
           <RiErrorWarningFill
             style={{ width: '20px', height: '20px', color: 'FCCA00', flexShrink: 0 }}
@@ -394,14 +394,14 @@ export function Step2DepositForm({
         </HStack>
 
         {/* Transaction Info */}
-        <TransactionInfoBox
+        {/* <TransactionInfoBox
           isExpanded={isExpanded}
           onToggleExpand={onToggleExpand}
           loading={quoteLoading}
           priceImpact={txInfo?.priceImpact ?? '-'}
           slippage={txInfo?.slippage ?? '-'}
           estimatedTime={txInfo?.estimatedTime ?? '-'}
-        />
+        /> */}
       </VStack>
 
       {/* Copy Address Confirmation Dialog */}
