@@ -257,14 +257,14 @@ const SDAPage = () => {
         categories: t.categories,
       }))
       .sort((a, b) => {
-        // Stablecoin first → native token → others
-        const aStable = a.categories?.includes('stablecoin') ? 0 : 1;
-        const bStable = b.categories?.includes('stablecoin') ? 0 : 1;
+        // Stablecoin first (USDT before USDC) → native token → others
+        const stableOrder: Record<string, number> = { USDT: 0, USDC: 1 };
+        const aStable = a.categories?.includes('stablecoin') ? (stableOrder[a.symbol] ?? 2) : 99;
+        const bStable = b.categories?.includes('stablecoin') ? (stableOrder[b.symbol] ?? 2) : 99;
+        if (aStable !== bStable) return aStable - bStable;
         const aNative = a.native ? 0 : 1;
         const bNative = b.native ? 0 : 1;
-        const aPriority = aStable + aNative;
-        const bPriority = bStable + bNative;
-        if (aPriority !== bPriority) return aPriority - bPriority;
+        if (aNative !== bNative) return aNative - bNative;
         return a.symbol.localeCompare(b.symbol);
       });
   }, [effectiveChainId, apiTokens, toTokenSet]);
@@ -316,14 +316,14 @@ const SDAPage = () => {
         categories: t.categories,
       }))
       .sort((a, b) => {
-        // Stablecoin first → native token → others
-        const aStable = a.categories?.includes('stablecoin') ? 0 : 1;
-        const bStable = b.categories?.includes('stablecoin') ? 0 : 1;
+        // Stablecoin first (USDT before USDC) → native token → others
+        const stableOrder: Record<string, number> = { USDT: 0, USDC: 1 };
+        const aStable = a.categories?.includes('stablecoin') ? (stableOrder[a.symbol] ?? 2) : 99;
+        const bStable = b.categories?.includes('stablecoin') ? (stableOrder[b.symbol] ?? 2) : 99;
+        if (aStable !== bStable) return aStable - bStable;
         const aNative = a.native ? 0 : 1;
         const bNative = b.native ? 0 : 1;
-        const aPriority = aStable + aNative;
-        const bPriority = bStable + bNative;
-        if (aPriority !== bPriority) return aPriority - bPriority;
+        if (aNative !== bNative) return aNative - bNative;
         return a.symbol.localeCompare(b.symbol);
       });
   }, [effectiveFromChainId, apiTokens, fromTokenSet, effectiveChainId, displayTokenKey, enrichedTokens]);
