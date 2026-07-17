@@ -14,6 +14,7 @@ import { getAddress } from 'viem';
 import { useSDAStore } from '../store/sdaStore';
 import { useSDAClientQuote } from '../api/useSDAClientQuote';
 import { usePollSDAOrder } from '../api/usePollSDAOrder';
+import { useTokenUsdPrice } from '../hooks/useTokenUsdPrice';
 import { calculateAutoSlippage } from '../api/slippage';
 import { isSolanaChain } from '../consts/solana';
 import { isValidEVMAddress, isValidSolanaAddress, isValidTronAddress } from '../utils/address';
@@ -416,6 +417,12 @@ const SDAPage = () => {
     [displayFromTokenKey, fromEnrichedTokens, effectiveFromChainId],
   );
 
+  // ── Token USD price (on-chain via Chainlink) ────────────────────
+  const { price: tokenUsdPrice } = useTokenUsdPrice(
+    fromSelectedToken?.address,
+    effectiveFromChainId ?? undefined,
+  );
+
   // ── Address validation ──────────────────────────────────────────
   const chainIsSolana = useMemo(
     () => isSolanaChain(effectiveChainId ?? undefined),
@@ -681,10 +688,10 @@ const SDAPage = () => {
 
   // Deposit amount the user needs to send, based on the step-2 selected token.
   // amount_in (base units) → decimal string + token symbol, e.g. "1USDT".
-  const depositAmountText = useMemo(() => {
-    if (!quoteResponse?.amount_in || !fromSelectedToken) return null;
-    // Stablecoins are priced ~1:1 to USD, so 2 decimals are enough;
-    // otherwise keep 6 decimals of precision.
+  const { depositAmountText, depositUsdValue } = useMemo(() => {
+    if (!quoteResponse?.amount_in || !fromSelectedToken) {
+      return { depositAmountText: null, depositUsdValue: null };
+    }
     const fromTokenInfo = tokensMap.get(
       `${effectiveFromChainId}:${fromSelectedToken.address?.toLowerCase()}`,
     );
@@ -694,8 +701,17 @@ const SDAPage = () => {
       fromBaseUnits(quoteResponse.amount_in, fromSelectedToken.decimals),
       maxFractionDigits,
     );
-    return `${value}-${fromSelectedToken.symbol}`;
-  }, [quoteResponse, fromSelectedToken, tokensMap, effectiveFromChainId]);
+    const text = `${value}-${fromSelectedToken.symbol}`;
+    // Compute USD: stablecoin = 1:1, otherwise try on-chain price feed.
+    let usd: string | null = null;
+    if (isStablecoin) {
+      usd = `≈ $${value}`;
+    } else if (tokenUsdPrice && tokenUsdPrice > 0) {
+      const usdValue = Number(value) * tokenUsdPrice;
+      usd = `≈ $${usdValue.toFixed(2)}`;
+    }
+    return { depositAmountText: text, depositUsdValue: usd };
+  }, [quoteResponse, fromSelectedToken, tokensMap, effectiveFromChainId, tokenUsdPrice]);
 
   // ── Render ──────────────────────────────────────────────────────
   return (
@@ -755,6 +771,7 @@ const SDAPage = () => {
             fromSelectedToken={fromSelectedToken}
             fromEnrichedTokens={fromEnrichedTokens}
             depositAmountText={depositAmountText}
+            depositUsdValue={depositUsdValue}
             amount={amount}
             quoteLoading={quoteLoading}
             quoteRequestId={quoteResponse?.request_id ?? null}

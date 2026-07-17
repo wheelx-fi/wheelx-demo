@@ -53,6 +53,7 @@ interface Step2DepositFormProps {
   onRefreshQuote: () => void;
   onCountdownExpired?: () => void;
   quoteError: string | null;
+  depositUsdValue: string | null;
   qrCodeUrl: string;
   displayAddress: string;
   copied: boolean;
@@ -81,6 +82,7 @@ export function Step2DepositForm({
   fromSelectedToken,
   fromEnrichedTokens,
   depositAmountText,
+  depositUsdValue,
   amount,
   quoteLoading,
   quoteRequestId,
@@ -203,6 +205,11 @@ export function Step2DepositForm({
               />
             </Box>
             <Box fontSize={'14px'}>{amountAndToken?.[1]}</Box>
+            {depositUsdValue && (
+              <Box fontSize={'12px'} color={'#888'}>
+                {depositUsdValue}
+              </Box>
+            )}
           </HStack>
         </VStack>
       )}
