@@ -254,7 +254,19 @@ const SDAPage = () => {
         name: t.name ?? t.symbol,
         address: t.address,
         decimals: t.decimals,
-      }));
+        categories: t.categories,
+      }))
+      .sort((a, b) => {
+        // Stablecoin first → native token → others
+        const aStable = a.categories?.includes('stablecoin') ? 0 : 1;
+        const bStable = b.categories?.includes('stablecoin') ? 0 : 1;
+        const aNative = a.native ? 0 : 1;
+        const bNative = b.native ? 0 : 1;
+        const aPriority = aStable + aNative;
+        const bPriority = bStable + bNative;
+        if (aPriority !== bPriority) return aPriority - bPriority;
+        return a.symbol.localeCompare(b.symbol);
+      });
   }, [effectiveChainId, apiTokens, toTokenSet]);
 
   const effectiveTokenKey = useMemo(() => {
@@ -301,7 +313,19 @@ const SDAPage = () => {
         name: t.name ?? t.symbol,
         address: t.address,
         decimals: t.decimals,
-      }));
+        categories: t.categories,
+      }))
+      .sort((a, b) => {
+        // Stablecoin first → native token → others
+        const aStable = a.categories?.includes('stablecoin') ? 0 : 1;
+        const bStable = b.categories?.includes('stablecoin') ? 0 : 1;
+        const aNative = a.native ? 0 : 1;
+        const bNative = b.native ? 0 : 1;
+        const aPriority = aStable + aNative;
+        const bPriority = bStable + bNative;
+        if (aPriority !== bPriority) return aPriority - bPriority;
+        return a.symbol.localeCompare(b.symbol);
+      });
   }, [effectiveFromChainId, apiTokens, fromTokenSet, effectiveChainId, displayTokenKey, enrichedTokens]);
 
   const effectiveFromTokenKey = useMemo(() => {
@@ -438,8 +462,11 @@ const SDAPage = () => {
   }, []);
 
   const handleTokenChange = useCallback((e: { value: string[] }) => {
-    setSelectedTokenKey(e.value[0]);
-  }, []);
+    const key = e.value[0];
+    const token = enrichedTokens.find((t) => `${effectiveChainId}:${t.symbol}` === key);
+    console.log('[Token Selected]', { key, token, chainId: effectiveChainId });
+    setSelectedTokenKey(key);
+  }, [enrichedTokens, effectiveChainId]);
 
   const handleFromChainChange = useCallback((e: { value: string[] }) => {
     const id = Number(e.value[0]);
@@ -448,8 +475,11 @@ const SDAPage = () => {
   }, []);
 
   const handleFromTokenChange = useCallback((e: { value: string[] }) => {
-    setFromTokenKey(e.value[0]);
-  }, []);
+    const key = e.value[0];
+    const token = fromEnrichedTokens.find((t) => `${effectiveFromChainId}:${t.symbol}` === key);
+    console.log('[From Token Selected]', { key, token, chainId: effectiveFromChainId });
+    setFromTokenKey(key);
+  }, [fromEnrichedTokens, effectiveFromChainId]);
 
   const handleNext = useCallback(() => {
     if (addressError !== null || !receiveAddress.trim()) return;

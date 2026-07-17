@@ -24,6 +24,7 @@ export interface EnrichedToken {
   name: string;
   address: string | undefined;
   decimals: number;
+  categories?: string[];
 }
 
 interface Step1ReceiveFormProps {

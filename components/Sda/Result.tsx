@@ -100,7 +100,7 @@ const SdaResult = (props: SdaResultProp) => {
         ></Box>
         <VStack {...resultContStyle}>
           <Box {...resultTitleStyle}>Funds Returned</Box>
-          <Box color={'txt-weak'}>Please contact support for assistance</Box>
+          <Box color={'txt-weak'}>The funds have been returned to the sending address</Box>
         </VStack>
       </HStack>
     );
