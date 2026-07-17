@@ -60,6 +60,46 @@ export interface ChainsAndTokens {
   };
 }
 
+// ── Deposit Address Config Types ────────────────────────────────────
+
+/** A single chain entry in the /v1/deposit-address-config response. */
+export interface DepositAddressConfigChain {
+  id: number;
+  from_enable: boolean;
+  to_enable: boolean;
+  chain: number;
+  created_at: string;
+  updated_at: string;
+  chain_info: ChainInfo;
+}
+
+/** A single token entry in the /v1/deposit-address-config response. */
+export interface DepositAddressConfigToken {
+  id: number;
+  direction: 'from' | 'to';
+  token_name: string;
+  token_address: string;
+  enable: boolean;
+  chain: number;
+  created_at: string;
+  updated_at: string;
+  token_info: TokenInfo;
+}
+
+/** Transformed deposit config stored in chainsStore (flattened from API). */
+export interface DepositToken {
+  chain_id: number;
+  address: string;
+  symbol: string;
+}
+
+/** Raw response from /v1/deposit-address-config. */
+export interface DepositAddressConfigResponse {
+  chains: DepositAddressConfigChain[];
+  tokens: DepositAddressConfigToken[];
+  slippage_policies?: SlippagePolicy[];
+}
+
 // ── SDA Quote Types ────────────────────────────────────────────────
 
 export interface SDAQuoteRequest {

@@ -4,6 +4,9 @@ import { useCallback, useEffect, useRef, useState } from 'react';
 import { BASE_API_URL } from './consts';
 import type { OrderDetail, OrderStatus } from './types';
 
+// Once the order reaches one of these statuses, polling stops automatically.
+const TERMINAL_STATUSES: OrderStatus[] = ['Filled', 'Failed', 'Refund'];
+
 interface UsePollSDAOrderOptions {
   /** Polling interval in ms (default: 5000) */
   interval?: number;
@@ -77,7 +80,7 @@ export function usePollSDAOrder(options: UsePollSDAOrderOptions = {}): UsePollSD
       setData(result);
       setError(null);
 
-      if (result.status === 'Filled') {
+      if (TERMINAL_STATUSES.includes(result.status)) {
         stoppedRef.current = true;
         setStopped(true);
         setIsLoading(false);
@@ -150,7 +153,7 @@ export function usePollSDAOrder(options: UsePollSDAOrderOptions = {}): UsePollSD
           if (stoppedRef.current) return;
           setData(result);
 
-          if (result.status === 'Filled') {
+          if (TERMINAL_STATUSES.includes(result.status)) {
             stoppedRef.current = true;
             setStopped(true);
             setIsLoading(false);

@@ -208,7 +208,7 @@ export function Step2DepositForm({
       )}
 
       {countdownExpired && (
-        <HStack w={'250px'} margin={'0 auto 15px'} color={'red'}>
+        <Box w={'280px'} margin={'0 auto 15px'} color={'red'}>
           Payment quote expired. Please refresh to get the latest quote and deposit address.
           <Button
             variant="ghost"
@@ -218,10 +218,12 @@ export function Step2DepositForm({
             onClick={onRefreshQuote}
             loading={quoteLoading}
             aria-label="Refresh quote"
+            display={'inline'}
+            marginLeft={'5px'}
           >
             <LuRefreshCw style={{ width: '16px', height: '16px' }} />
           </Button>
-        </HStack>
+        </Box>
       )}
 
       <HStack alignItems="flex-start" gap={'12px'} marginBottom={'15px'}>

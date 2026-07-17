@@ -18,9 +18,8 @@ import { calculateAutoSlippage } from '../api/slippage';
 import { isSolanaChain } from '../consts/solana';
 import { isValidEVMAddress, isValidSolanaAddress, isValidTronAddress } from '../utils/address';
 import type { SDAQuoteResponse, TokenInfo } from '../api/types';
-import { ETH_CHAIN_ID, NULL_ADDRESS, CUSTOM_CHAIN, CUSTOM_CHAIN_ID, CUSTOM_TOKEN } from './config';
+import { ETH_CHAIN_ID, NULL_ADDRESS } from './config';
 import { formatPriceImpact, formatEstimatedTime } from './utils';
-import { sda } from '../data/sda';
 import { SdaHeader } from './components/SdaHeader';
 import { SdaFooter } from './components/SdaFooter';
 import { Step1ReceiveForm } from './components/Step1ReceiveForm';
@@ -101,20 +100,36 @@ const SDAPage = () => {
     reset: resetOrder,
   } = usePollSDAOrder({ interval: 2000, maxAttempts: 100 });
 
-  // ── SDA data source (app/data/sda.ts) ────────────────────────────
-  const sdaData = useMemo(() => sda(), []);
+  // ── Deposit config from /v1/deposit-address-config ───────────────
+  const { depositConfig } = useChainsStore();
 
-  const toChainIds = useMemo(() => new Set(sdaData.toChain), [sdaData]);
-  const fromChainIds = useMemo(() => new Set(sdaData.fromChain), [sdaData]);
+  const toChainIds = useMemo(
+    () => new Set(depositConfig?.toChainIds ?? []),
+    [depositConfig],
+  );
+  const fromChainIds = useMemo(
+    () => new Set(depositConfig?.fromChainIds ?? []),
+    [depositConfig],
+  );
 
   // Token address lookup: "chainId:addressLowercase"
   const toTokenSet = useMemo(
-    () => new Set(sdaData.toToken.map((t) => `${t.chainId}:${t.tokenAddress.toLowerCase()}`)),
-    [sdaData],
+    () =>
+      new Set(
+        (depositConfig?.toTokens ?? []).map(
+          (t) => `${t.chain_id}:${t.address?.toLowerCase()}`,
+        ),
+      ),
+    [depositConfig],
   );
   const fromTokenSet = useMemo(
-    () => new Set(sdaData.fromToken.map((t) => `${t.chainId}:${t.tokenAddress.toLowerCase()}`)),
-    [sdaData],
+    () =>
+      new Set(
+        (depositConfig?.fromTokens ?? []).map(
+          (t) => `${t.chain_id}:${t.address?.toLowerCase()}`,
+        ),
+      ),
+    [depositConfig],
   );
 
   // ── Filtered chains from API ─────────────────────────────────────
@@ -129,14 +144,7 @@ const SDAPage = () => {
   );
 
   const toFilteredChains = useMemo(
-    () => {
-      const apiChains = allFilteredChains.filter((c) => toChainIds.has(c.chain_id));
-      // Inject custom chain not returned by backend API
-      if (!apiChains.some((c) => c.chain_id === CUSTOM_CHAIN_ID)) {
-        return [...apiChains, CUSTOM_CHAIN];
-      }
-      return apiChains;
-    },
+    () => allFilteredChains.filter((c) => toChainIds.has(c.chain_id)),
     [allFilteredChains, toChainIds],
   );
 
@@ -150,26 +158,22 @@ const SDAPage = () => {
   const effectiveChainId = selectedChainId ?? toFilteredChains[0]?.chain_id ?? null;
   const effectiveFromChainId = fromChainId ?? ETH_CHAIN_ID;
 
-  const fromFilteredChains = useMemo(
-    () => {
-      const apiChains = allFilteredChains.filter((c) => fromChainIds.has(c.chain_id));
-      // If step 1 (to) selected Tron, hide Tron in step 2 (from) — Tron has only one token and cannot self-transfer
-      if (effectiveChainId === CUSTOM_CHAIN_ID) {
-        return apiChains;
-      }
-      // Inject custom chain not returned by backend API
-      if (!apiChains.some((c) => c.chain_id === CUSTOM_CHAIN_ID)) {
-        return [...apiChains, CUSTOM_CHAIN];
-      }
-      return apiChains;
-    },
-    [allFilteredChains, fromChainIds, effectiveChainId],
-  );
-
   // ── Chain lookup maps ────────────────────────────────────────────
   const toChainsMap = useMemo(
     () => Object.fromEntries(toFilteredChains.map((c) => [c.chain_id, c])),
     [toFilteredChains],
+  );
+
+  const fromFilteredChains = useMemo(
+    () => {
+      let apiChains = allFilteredChains.filter((c) => fromChainIds.has(c.chain_id));
+      // If step 1 (to) selected Tron, hide Tron in step 2 (from) — Tron has only one token and cannot self-transfer
+      if (effectiveChainId != null && toChainsMap[effectiveChainId]?.name === 'Tron') {
+        apiChains = apiChains.filter((c) => c.name !== 'Tron');
+      }
+      return apiChains;
+    },
+    [allFilteredChains, fromChainIds, effectiveChainId, toChainsMap],
   );
 
   const fromChainsMap = useMemo(
@@ -220,7 +224,8 @@ const SDAPage = () => {
     if (status) {
       // eslint-disable-next-line react-hooks/set-state-in-effect
       setShowOrderResult(true);
-      const timer = setTimeout(() => setShowOrderResult(false), 5000);
+      const hideDelay = status === 'Filled' || status === 'Failed' || status === 'Refund' ? 20000 : 5000;
+      const timer = setTimeout(() => setShowOrderResult(false), hideDelay);
       return () => clearTimeout(timer);
     }
   }, [orderData?.status]);
@@ -228,17 +233,6 @@ const SDAPage = () => {
   // ── Step 1: Enriched tokens (from sda.toToken) ───────────────────
   const enrichedTokens: EnrichedToken[] = useMemo(() => {
     if (!effectiveChainId) return [];
-    // Custom chain token (not returned by backend API)
-    if (effectiveChainId === CUSTOM_CHAIN_ID) {
-      return [{
-        symbol: CUSTOM_TOKEN.symbol,
-        native: false,
-        logo: CUSTOM_TOKEN.logo,
-        name: CUSTOM_TOKEN.name,
-        address: CUSTOM_TOKEN.address,
-        decimals: CUSTOM_TOKEN.decimals,
-      }];
-    }
     if (!apiTokens) return [];
     const seen = new Set<string>();
     return apiTokens
@@ -275,19 +269,6 @@ const SDAPage = () => {
   // ── Step 2: Enriched tokens (from sda.fromToken) ─────────────────
   const fromEnrichedTokens: EnrichedToken[] = useMemo(() => {
     if (!effectiveFromChainId) return [];
-    // Custom chain token (not returned by backend API)
-    if (effectiveFromChainId === CUSTOM_CHAIN_ID) {
-      // If step 1 (to) is also Tron, it cannot be selected — Tron has only one token and cannot self-transfer
-      if (effectiveChainId === CUSTOM_CHAIN_ID) return [];
-      return [{
-        symbol: CUSTOM_TOKEN.symbol,
-        native: false,
-        logo: CUSTOM_TOKEN.logo,
-        name: CUSTOM_TOKEN.name,
-        address: CUSTOM_TOKEN.address,
-        decimals: CUSTOM_TOKEN.decimals,
-      }];
-    }
     if (!apiTokens) return [];
     const seen = new Set<string>();
     const toChainId = effectiveChainId;
@@ -335,12 +316,17 @@ const SDAPage = () => {
   // If step 1 (to) selected Tron and step 2 (from) is currently Tron, reset from to ETH
   // (Tron has only one token and cannot self-transfer)
   useEffect(() => {
-    if (effectiveChainId === CUSTOM_CHAIN_ID && fromChainId === CUSTOM_CHAIN_ID) {
+    if (
+      effectiveChainId != null &&
+      fromChainId != null &&
+      toChainsMap[effectiveChainId]?.name === 'Tron' &&
+      fromChainsMap[fromChainId]?.name === 'Tron'
+    ) {
       // eslint-disable-next-line react-hooks/set-state-in-effect
       setFromChainId(ETH_CHAIN_ID);
       setFromTokenKey(null);
     }
-  }, [effectiveChainId, fromChainId]);
+  }, [effectiveChainId, fromChainId, toChainsMap, fromChainsMap]);
 
   // ── Chakra collections ──────────────────────────────────────────
   const toChainCollection = useMemo(() => {
@@ -413,8 +399,8 @@ const SDAPage = () => {
   );
 
   const chainIsTron = useMemo(
-    () => effectiveChainId === CUSTOM_CHAIN_ID,
-    [effectiveChainId],
+    () => effectiveChainId !== null && toChainsMap[effectiveChainId]?.name === 'Tron',
+    [effectiveChainId, toChainsMap],
   );
 
   const addressError = useMemo(() => {
