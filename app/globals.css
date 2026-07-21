@@ -7,3 +7,26 @@ body {
   font-size: 12px;
   background-color: #FAFAFA;
 }
+
+.center-toaster[data-part="group"] {
+  position: fixed !important;
+  inset: 0 !important;
+  width: auto !important;
+  height: auto !important;
+  display: flex !important;
+  align-items: center !important;
+  justify-content: center !important;
+  padding: 0 !important;
+  pointer-events: none;
+}
+
+.center-toaster[data-part="group"] [data-part="root"] {
+  position: static !important;
+  top: auto !important;
+  bottom: auto !important;
+  transform: none !important;
+  translate: none !important;
+  width: auto !important;
+  max-width: 90vw;
+  pointer-events: auto;
+}

@@ -88,6 +88,11 @@ const SDAPage = () => {
   const [qrCodeUrl, setQrCodeUrl] = useState('');
   const [copied, setCopied] = useState(false);
   const [isExpanded, setIsExpanded] = useState(false);
+  // Fee option from Step 1 (value "2" = amount covers all fees → strict mode).
+  // Lifted here (instead of local Step1 state) so the selection survives step
+  // switches — Step1 unmounts on navigation, which would wipe local state.
+  const [feeOption, setFeeOption] = useState('');
+  const strict = feeOption === '2';
 
   // ── Data hooks ──────────────────────────────────────────────────
   useLoadChainsData();
@@ -133,6 +138,37 @@ const SDAPage = () => {
     [depositConfig],
   );
 
+  // Chains that have at least one stablecoin (for option 2 / strict mode)
+  const toStableChainIds = useMemo(() => {
+    const set = new Set<number>();
+    if (apiTokens) {
+      for (const t of apiTokens) {
+        if (
+          t.categories?.includes('stablecoin') &&
+          toTokenSet.has(`${t.chain_id}:${t.address?.toLowerCase()}`)
+        ) {
+          set.add(t.chain_id);
+        }
+      }
+    }
+    return set;
+  }, [apiTokens, toTokenSet]);
+
+  const fromStableChainIds = useMemo(() => {
+    const set = new Set<number>();
+    if (apiTokens) {
+      for (const t of apiTokens) {
+        if (
+          t.categories?.includes('stablecoin') &&
+          fromTokenSet.has(`${t.chain_id}:${t.address?.toLowerCase()}`)
+        ) {
+          set.add(t.chain_id);
+        }
+      }
+    }
+    return set;
+  }, [apiTokens, fromTokenSet]);
+
   // ── Filtered chains from API ─────────────────────────────────────
   const allAllowedChainIds = useMemo(
     () => new Set([...toChainIds, ...fromChainIds]),
@@ -145,8 +181,12 @@ const SDAPage = () => {
   );
 
   const toFilteredChains = useMemo(
-    () => allFilteredChains.filter((c) => toChainIds.has(c.chain_id)),
-    [allFilteredChains, toChainIds],
+    () =>
+      allFilteredChains
+        .filter((c) => toChainIds.has(c.chain_id))
+        // Option 2 (strict) → hide chains without any stablecoin
+        .filter((c) => !strict || toStableChainIds.has(c.chain_id)),
+    [allFilteredChains, toChainIds, strict, toStableChainIds],
   );
 
   // ── Step 1/2 chain / token selections ───────────────────────────
@@ -172,9 +212,13 @@ const SDAPage = () => {
       if (effectiveChainId != null && toChainsMap[effectiveChainId]?.name === 'Tron') {
         apiChains = apiChains.filter((c) => c.name !== 'Tron');
       }
+      // Option 2 (strict) → hide chains without any stablecoin
+      if (strict) {
+        apiChains = apiChains.filter((c) => fromStableChainIds.has(c.chain_id));
+      }
       return apiChains;
     },
-    [allFilteredChains, fromChainIds, effectiveChainId, toChainsMap],
+    [allFilteredChains, fromChainIds, effectiveChainId, toChainsMap, strict, fromStableChainIds],
   );
 
   const fromChainsMap = useMemo(
@@ -270,12 +314,18 @@ const SDAPage = () => {
       });
   }, [effectiveChainId, apiTokens, toTokenSet]);
 
+  // Option 2 (strict / "amount covers all fees") → only stablecoins are offered
+  const toTokensDisplay = useMemo(() => {
+    if (!strict) return enrichedTokens;
+    return enrichedTokens.filter((t) => t.categories?.includes('stablecoin'));
+  }, [strict, enrichedTokens]);
+
   const effectiveTokenKey = useMemo(() => {
-    if (!effectiveChainId || enrichedTokens.length === 0) return null;
-    const native = enrichedTokens.find((t) => t.native);
-    const defaultTok = native ?? enrichedTokens[0];
+    if (!effectiveChainId || toTokensDisplay.length === 0) return null;
+    const native = toTokensDisplay.find((t) => t.native);
+    const defaultTok = native ?? toTokensDisplay[0];
     return `${effectiveChainId}:${defaultTok.symbol}`;
-  }, [effectiveChainId, enrichedTokens]);
+  }, [effectiveChainId, toTokensDisplay]);
 
   const displayTokenKey = selectedTokenKey ?? effectiveTokenKey;
 
@@ -307,6 +357,8 @@ const SDAPage = () => {
         }
         return true;
       })
+      // Option 2 (strict) → only stablecoins in the deposit (from) token list
+      .filter((t) => !strict || t.categories?.includes('stablecoin'))
       .map((t) => ({
         symbol: t.symbol,
         native: t.tags?.includes('native' as never) ?? false,
@@ -327,7 +379,7 @@ const SDAPage = () => {
         if (aNative !== bNative) return aNative - bNative;
         return a.symbol.localeCompare(b.symbol);
       });
-  }, [effectiveFromChainId, apiTokens, fromTokenSet, effectiveChainId, displayTokenKey, enrichedTokens]);
+  }, [effectiveFromChainId, apiTokens, fromTokenSet, effectiveChainId, displayTokenKey, enrichedTokens, strict]);
 
   const effectiveFromTokenKey = useMemo(() => {
     if (!effectiveFromChainId || fromEnrichedTokens.length === 0) return null;
@@ -353,6 +405,66 @@ const SDAPage = () => {
     }
   }, [effectiveChainId, fromChainId, toChainsMap, fromChainsMap]);
 
+  // When option 2 (strict) is enabled, if the currently selected chain has no
+  // stablecoin, fall back to mainnet (ETH), or the first available stable chain.
+  useEffect(() => {
+    if (!strict) return;
+    if (effectiveChainId != null && !toStableChainIds.has(effectiveChainId)) {
+      const fallback = toStableChainIds.has(ETH_CHAIN_ID)
+        ? ETH_CHAIN_ID
+        : (toFilteredChains[0]?.chain_id ?? null);
+      if (fallback != null) {
+        // eslint-disable-next-line react-hooks/set-state-in-effect
+        setSelectedChainId(fallback);
+        setSelectedTokenKey(null);
+      }
+    }
+    if (effectiveFromChainId != null && !fromStableChainIds.has(effectiveFromChainId)) {
+      const fallbackFrom = fromStableChainIds.has(ETH_CHAIN_ID)
+        ? ETH_CHAIN_ID
+        : (fromFilteredChains[0]?.chain_id ?? null);
+      if (fallbackFrom != null) {
+        // eslint-disable-next-line react-hooks/set-state-in-effect
+        setFromChainId(fallbackFrom);
+        setFromTokenKey(null);
+      }
+    }
+  }, [
+    strict,
+    effectiveChainId,
+    toStableChainIds,
+    toFilteredChains,
+    effectiveFromChainId,
+    fromStableChainIds,
+    fromFilteredChains,
+  ]);
+
+  // When option 2 (strict) is enabled, restrict both token lists to stablecoins
+  // and auto-select the first stablecoin if a non-stablecoin was previously chosen.
+  useEffect(() => {
+    if (!strict) return;
+    const toStable = enrichedTokens.filter((t) => t.categories?.includes('stablecoin'));
+    if (toStable.length > 0) {
+      const current = displayTokenKey
+        ? enrichedTokens.find((t) => `${effectiveChainId}:${t.symbol}` === displayTokenKey)
+        : null;
+      if (!current || !current.categories?.includes('stablecoin')) {
+        // eslint-disable-next-line react-hooks/set-state-in-effect
+        setSelectedTokenKey(`${effectiveChainId}:${toStable[0].symbol}`);
+      }
+    }
+    const fromStable = fromEnrichedTokens.filter((t) => t.categories?.includes('stablecoin'));
+    if (fromStable.length > 0) {
+      const currentFrom = displayFromTokenKey
+        ? fromEnrichedTokens.find((t) => `${effectiveFromChainId}:${t.symbol}` === displayFromTokenKey)
+        : null;
+      if (!currentFrom || !currentFrom.categories?.includes('stablecoin')) {
+        // eslint-disable-next-line react-hooks/set-state-in-effect
+        setFromTokenKey(`${effectiveFromChainId}:${fromStable[0].symbol}`);
+      }
+    }
+  }, [strict, effectiveChainId, enrichedTokens, displayTokenKey, setSelectedTokenKey, effectiveFromChainId, fromEnrichedTokens, displayFromTokenKey, setFromTokenKey]);
+
   // ── Chakra collections ──────────────────────────────────────────
   const toChainCollection = useMemo(() => {
     if (!toFilteredChains.length) return null;
@@ -375,16 +487,16 @@ const SDAPage = () => {
   }, [fromFilteredChains]);
 
   const tokenCollection = useMemo(() => {
-    if (!enrichedTokens.length) return null;
+    if (!toTokensDisplay.length) return null;
     return createListCollection({
-      items: enrichedTokens.map((t) => ({
+      items: toTokensDisplay.map((t) => ({
         label: t.symbol,
         value: `${effectiveChainId}:${t.symbol}`,
         address: t.address,
         decimals: t.decimals,
       })),
     });
-  }, [enrichedTokens, effectiveChainId]);
+  }, [toTokensDisplay, effectiveChainId]);
 
   const fromTokenCollection = useMemo(() => {
     if (!fromEnrichedTokens.length) return null;
@@ -611,6 +723,9 @@ const SDAPage = () => {
       );
 
       try {
+        // amount of 0 (empty or literally "0") disables strict mode regardless of fee option
+        const amountIsZero = amount.trim() === '' || Number(amount) === 0;
+        const effectiveStrict = strict && !amountIsZero;
         const res = await fetchQuote({
           from_chain: effectiveFromChainId,
           to_chain: effectiveChainId,
@@ -622,8 +737,11 @@ const SDAPage = () => {
           slippage: autoSlippage,
           to_platform_id: toPlatformId,
           use_deposit_address: true,
-          // exact_out only when an amount is entered; empty amount → exact_in mode
-          exact_out: amount.trim() !== '',
+          // exact_out only when an amount is entered; empty amount → exact_in mode.
+          // Option 2 ("amount covers all fees") forces exact_out: false even if amount is set.
+          exact_out: !strict && amount.trim() !== '',
+          // strict mode from Step 1 fee option (option 2 → true); disabled when amount is 0
+          strict: effectiveStrict,
         });
 
         setQuoteResponseLocal(res);
@@ -689,7 +807,7 @@ const SDAPage = () => {
   // Deposit amount the user needs to send, based on the step-2 selected token.
   // amount_in (base units) → decimal string + token symbol, e.g. "1USDT".
   const { depositAmountText, depositUsdValue } = useMemo(() => {
-    if (!quoteResponse?.amount_in || !fromSelectedToken) {
+    if (!fromSelectedToken) {
       return { depositAmountText: null, depositUsdValue: null };
     }
     const fromTokenInfo = tokensMap.get(
@@ -697,10 +815,23 @@ const SDAPage = () => {
     );
     const isStablecoin = fromTokenInfo?.categories?.includes('stablecoin') ?? false;
     const maxFractionDigits = isStablecoin ? 2 : 6;
-    const value = roundAmount(
-      fromBaseUnits(quoteResponse.amount_in, fromSelectedToken.decimals),
-      maxFractionDigits,
-    );
+    // Option 2 (strict): backend returns amount_in = null, so the deposit value
+    // is exactly what the user typed in Step 1's amount input.
+    let value: string;
+    if (strict) {
+      if (amount.trim() === '') {
+        return { depositAmountText: null, depositUsdValue: null };
+      }
+      value = roundAmount(amount, maxFractionDigits);
+    } else {
+      if (!quoteResponse?.amount_in) {
+        return { depositAmountText: null, depositUsdValue: null };
+      }
+      value = roundAmount(
+        fromBaseUnits(quoteResponse.amount_in, fromSelectedToken.decimals),
+        maxFractionDigits,
+      );
+    }
     const text = `${value}-${fromSelectedToken.symbol}`;
     // Compute USD: stablecoin = 1:1, otherwise try on-chain price feed.
     let usd: string | null = null;
@@ -711,7 +842,7 @@ const SDAPage = () => {
       usd = `≈ $${usdValue.toFixed(2)}`;
     }
     return { depositAmountText: text, depositUsdValue: usd };
-  }, [quoteResponse, fromSelectedToken, tokensMap, effectiveFromChainId, tokenUsdPrice]);
+  }, [quoteResponse, fromSelectedToken, tokensMap, effectiveFromChainId, tokenUsdPrice, strict, amount]);
 
   // ── Render ──────────────────────────────────────────────────────
   return (
@@ -751,6 +882,8 @@ const SDAPage = () => {
             onAmountChange={setAmount}
             amountError={amountError}
             onNext={handleNext}
+            feeOption={feeOption}
+            onFeeOptionChange={setFeeOption}
             chainIconSize={chainIconSize}
             tokenIconSize={tokenIconSize}
           />
@@ -789,6 +922,7 @@ const SDAPage = () => {
             showOrderResult={showOrderResult}
             showDemoResult={showDemoResult}
             receiveChainIsTron={chainIsTron}
+            strict={strict}
             chainIconSize={chainIconSize}
             tokenIconSize={tokenIconSize}
           />

@@ -116,6 +116,7 @@ export interface SDAQuoteRequest {
   quote_only?: boolean;
   use_deposit_address: boolean;
   exact_out?: boolean;
+  strict?: boolean;
 }
 
 export interface SDAQuoteResponse {

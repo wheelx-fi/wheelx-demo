@@ -23,12 +23,7 @@ import { TokenSelectDropdown } from './TokenSelectDropdown';
 import type { EnrichedToken } from './Step1ReceiveForm';
 import { ToggleTip } from '@/components/ui/ToggleTip';
 import { LuInfo, LuRefreshCw } from 'react-icons/lu';
-import { createToaster, Toaster, Toast } from '@chakra-ui/react';
-
-const toaster = createToaster({
-  placement: 'top-end',
-  duration: 2000,
-});
+import { toaster } from '@/components/ui/toaster';
 
 // Quote validity countdown.
 // NOTE: temporarily 30s for debugging; the real value is 5 minutes (5 * 60 * 1000).
@@ -65,6 +60,7 @@ interface Step2DepositFormProps {
   showOrderResult: boolean;
   showDemoResult: boolean;
   receiveChainIsTron?: boolean;
+  strict?: boolean;
   chainIconSize: { w: string; h: string };
   tokenIconSize: { w: string; h: string };
 }
@@ -100,6 +96,7 @@ export function Step2DepositForm({
   showOrderResult,
   showDemoResult,
   receiveChainIsTron,
+  strict,
   chainIconSize,
   tokenIconSize,
 }: Step2DepositFormProps) {
@@ -115,13 +112,14 @@ export function Step2DepositForm({
   const [now, setNow] = useState(() => Date.now());
 
   // Start / reset the 5-min countdown whenever a new quote succeeds.
+  // Skipped when strict mode is on (no expiry / no order-stop on timeout).
   useEffect(() => {
-    if (quoteRequestId && !quoteLoading) {
+    if (!strict && quoteRequestId && !quoteLoading) {
       // eslint-disable-next-line react-hooks/set-state-in-effect
       setExpireAt(Date.now() + QUOTE_COUNTDOWN_MS);
       setNow(Date.now());
     }
-  }, [quoteRequestId, quoteLoading]);
+  }, [strict, quoteRequestId, quoteLoading]);
 
   // Tick every second while counting down.
   useEffect(() => {
@@ -137,17 +135,22 @@ export function Step2DepositForm({
 
   // When the countdown expires, immediately stop the order request.
   // A new order only starts after the user refreshes and the quote re-succeeds.
+  // Skipped when strict mode is on (countdown never starts in that case).
   useEffect(() => {
-    if (countdownExpired) {
+    if (!strict && countdownExpired) {
       onCountdownExpired?.();
     }
-  }, [countdownExpired, onCountdownExpired]);
+  }, [strict, countdownExpired, onCountdownExpired]);
 
   const handleCopyConfirmed = () => {
     onCopyAddress();
     setDialogOpen(false);
+    const masked =
+      displayAddress.length > 10
+        ? `${displayAddress.slice(0, 5)}...${displayAddress.slice(-5)}`
+        : displayAddress;
     toaster.create({
-      title: 'Copied!',
+      title: `Copied address ${masked} success!`,
       type: 'success',
     });
   };
@@ -162,14 +165,6 @@ export function Step2DepositForm({
 
   return (
     <Box>
-      <Toaster toaster={toaster}>
-        {(toast) => (
-          <Toast.Root>
-            <Toast.Title>{toast.title}</Toast.Title>
-            <Toast.CloseTrigger />
-          </Toast.Root>
-        )}
-      </Toaster>
       {depositAmountText && !quoteLoading && (
         <VStack padding={'10px 0 20px'} w={'100%'} >
           <Box color={'#6C6C6C'}>Amount to Transfer</Box>
@@ -214,7 +209,7 @@ export function Step2DepositForm({
         </VStack>
       )}
 
-      {countdownExpired && (
+      {!strict && countdownExpired && (
         <Box w={'280px'} margin={'0 auto 15px'} color={'red'}>
           Payment quote expired. Please refresh to get the latest quote and deposit address.
           <Button

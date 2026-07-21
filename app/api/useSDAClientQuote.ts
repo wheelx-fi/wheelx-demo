@@ -31,6 +31,7 @@ export function useSDAClientQuote() {
         use_deposit_address: true,
         quote_only: true,
         exact_out: params.exact_out ?? true,
+        strict: params.strict ?? false,
       };
 
       const res = await fetch(`${BASE_API_URL}/v1/quote`, {

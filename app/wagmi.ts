@@ -131,7 +131,7 @@ const transports = Object.fromEntries(
 ) as Record<number, ReturnType<typeof http>>;
 
 export const config = createConfig({
-  chains: [supportedChains[0], ...supportedChains],
+  chains: supportedChains,
   transports,
   multiInjectedProviderDiscovery: false,
   ssr: true,

@@ -8,6 +8,7 @@ import {
   Button,
   Center,
   Spinner,
+  RadioGroup,
 } from '@chakra-ui/react';
 import type { ListCollection } from '@chakra-ui/react';
 import type { ChainInfo } from '../../api/types';
@@ -16,6 +17,12 @@ import { ChainSelectDropdown } from './ChainSelectDropdown';
 import { TokenSelectDropdown } from './TokenSelectDropdown';
 import { ToggleTip } from '@/components/ui/ToggleTip';
 import { LuInfo } from 'react-icons/lu';
+import { centerToaster } from '@/components/ui/toaster';
+
+const items = [
+  { label: "The sender bears all fees, including the gas fee", value: "1" },
+  { label: "This amount covers all fees, including the gas fee", value: "2" },
+]
 
 export interface EnrichedToken {
   symbol: string;
@@ -46,6 +53,8 @@ interface Step1ReceiveFormProps {
   onAmountChange: (value: string) => void;
   amountError: string | null;
   onNext: () => void;
+  feeOption: string;
+  onFeeOptionChange: (value: string) => void;
   chainIconSize: { w: string; h: string };
   tokenIconSize: { w: string; h: string };
 }
@@ -69,9 +78,22 @@ export function Step1ReceiveForm({
   onAmountChange,
   amountError,
   onNext,
+  feeOption,
+  onFeeOptionChange,
   chainIconSize,
   tokenIconSize,
 }: Step1ReceiveFormProps) {
+  const handleNext = () => {
+    if (amount && !feeOption) {
+      centerToaster.create({
+        title: <Box padding={'10px 15px'}>Please select a receiving mode first.</Box>,
+        type: 'warning'
+      });
+      return;
+    }
+    onNext();
+  };
+
   if (isLoading) {
     return (
       <Center py={'40px'}>
@@ -141,6 +163,19 @@ export function Step1ReceiveForm({
           />
         </VStack>
       </HStack>
+      {amount && <RadioGroup.Root colorPalette={'blue'} value={feeOption} size={'sm'} onValueChange={(e) => {
+        onFeeOptionChange(e.value ?? '');
+      }}>
+        <VStack gap="0" w={'100%'} padding={'5px 0'}>
+          {items.map((item) => (
+            <RadioGroup.Item key={item.value} value={item.value} w={'100%'} marginBottom={'10px'}>
+              <RadioGroup.ItemHiddenInput />
+              <RadioGroup.ItemIndicator />
+              <RadioGroup.ItemText color={'#333'} fontWeight={'normal'} fontSize={'12px'}>{item.label} {item.value === '2' && <Box as="span" color={'#0F40F5'}>(Stablecoins Only)</Box>}</RadioGroup.ItemText>
+            </RadioGroup.Item>
+          ))}
+        </VStack>
+      </RadioGroup.Root>}
       <HStack alignItems="flex-start" gap={'12px'} marginBottom={addressError ? '5px' : '15px'}>
         <VStack flex={1} gap={0}>
           <Box
@@ -185,7 +220,7 @@ export function Step1ReceiveForm({
           position={'relative'}
           bgColor={'#0F40F4'}
           color={'#fff'}
-          onClick={onNext}
+          onClick={handleNext}
         >
           NEXT
           <HiArrowLongRight />
