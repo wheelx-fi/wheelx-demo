@@ -157,6 +157,11 @@ export function Step1ReceiveForm({
               const sanitized = e.target.value
                 .replace(/[^\d.]/g, '')
                 .replace(/(\..*)\./g, '$1');
+              // Clear the fee option whenever the amount is emptied, so the
+              // RadioGroup resets to an unselected state when shown again.
+              if (!sanitized) {
+                onFeeOptionChange('');
+              }
               onAmountChange(sanitized);
             }}
             borderColor={amountError ? 'red.500' : undefined}
